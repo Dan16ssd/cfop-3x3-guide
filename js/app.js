@@ -578,7 +578,7 @@ async function solveScramble(sc){
   shown.forEach((x,si)=>{x.toks=x.moves?x.moves.split(' ').map(t=>{flat.push({t,si});return `<span data-i="${gi++}">${t}</span>`;}).join(' '):'–';});
   out.innerHTML=`<div class="sol-sum"><div><b>${best.n}</b><span>${L('moves')}</span></div><div><b>${(best.n/6).toFixed(1)} s</b><span>${L('at 6 TPS')}</span></div><div><b>${(best.n/10).toFixed(1)} s</b><span>${L('at 10 TPS')}</span></div></div>
     <p class="sol-cmp">${L('Best total by first step:')} ${cmp}</p>
-    <ol class="sol-steps">${shown.map((x,si)=>`<li data-step="${si}" class="${x.ll?'ll':''}${x.scr?' scr':''}"><span class="lbl">${x.label}</span><code>${x.toks}</code><small>${x.note||Lt('moves',htm(x.moves))}</small></li>`).join('')}</ol>
+    <ol class="sol-steps">${shown.map((x,si)=>`<li data-step="${si}" class="${x.ll?'ll':''}${x.scr?' pre':''}"><span class="lbl">${x.label}</span><code>${x.toks}</code><small>${x.note||Lt('moves',htm(x.moves))}</small></li>`).join('')}</ol>
     ${noZB?`<p class="muted sol-alt">${Lt('noZB',noZB.n,noZB.steps.filter(x=>x.ll).map(x=>x.label).join(' + '))}</p>`:''}
     <div class="algline"><button id="solWatch">${L('Open in playground')}</button><button id="solCopy">${L('Copy solution')}</button></div>`;
   solPlayer(toks,flat,shown);

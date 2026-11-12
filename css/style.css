@@ -425,5 +425,15 @@ nav.bar .brand img{width:26px;height:26px}
 .logo{display:flex;align-items:center;gap:10px;font-size:1.9rem}
 .logo img{width:54px;height:54px}
 
-.sol-steps li.scr{border-left-color:#8b5cf6}
-.sol-steps li.scr small{white-space:normal;max-width:220px;text-align:right}
+.sol-steps li.pre{border-left-color:#8b5cf6}
+.sol-steps li.pre small{white-space:normal;max-width:220px;text-align:right}
+
+/* long scrambles wrap instead of overflowing */
+#solveIn{flex:1 1 240px;min-width:0;resize:none;font:500 .92rem/1.5 var(--mono);padding:8px 10px;border-radius:10px;border:1px solid #2c3766;background:#0a1028;color:var(--fg);word-spacing:.15em;field-sizing:content;min-height:2.6em}
+.dlg .algline{align-items:stretch}
+.sol-steps li{min-width:0}
+.sol-steps li>*{min-width:0}
+.sol-steps code{display:block;overflow-wrap:anywhere;white-space:normal;line-height:1.7}
+.sol-steps code span{display:inline-block}
+.scr,.scr-line code,.card .alg{overflow-wrap:anywhere}
+.dlg{overflow-x:hidden}
