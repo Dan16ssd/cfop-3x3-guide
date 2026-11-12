@@ -154,7 +154,19 @@ function renderF2L(){
 }
 function renderLL(list,host,mode,prefix,arrows){
   const h=document.getElementById(host);
-  list.forEach((it,i)=>{h.appendChild(card({...it,sub:it.alg.split(' ').length+' moves'},llDiagram(caseOf(it.alg),mode,arrows),prefix+i));});
+  list.forEach((it,i)=>{const s=caseOf(it.alg);h.appendChild(card({...it,sub:it.alg.split(' ').length+' moves'},mode.startsWith('pll')?pllDia(s,mode,arrows):llDiagram(s,mode,arrows),prefix+i));});
+}
+/* 3D (isometric) view of a last-layer case, with a turn button and a switch to the top view */
+function pllDia(s,mode,arrows){
+  const box=document.createElement('div');box.className='dual';
+  box.innerHTML='<div class="view"></div><div class="dual-ctl"><button class="sm rb" type="button" title="Turn the cube to see the other sides" aria-label="Turn the cube">↻ Turn</button><button class="sm tg" type="button"></button></div>';
+  const view=box.querySelector('.view'),rb=box.querySelector('.rb'),tg=box.querySelector('.tg');
+  const mask=mode==='pllc'?(st=>!(st.h[1]===1&&nz(st.h)===2&&st.n[1]!==1)):null;
+  let rotY=0,top=false;
+  const draw=()=>{let v;if(top)v=llDiagram(s,mode,arrows);else{const t=s.map(x=>({...x,p:x.p.slice(),n:x.n.slice()}));for(let i=0;i<rotY;i++)applyAlg(t,'y');v=isoDiagram(t,mask);}
+    view.replaceChildren(v);tg.textContent=top?'3D view':'Top view';rb.hidden=top;};
+  rb.onclick=()=>{rotY=(rotY+1)%4;draw();};tg.onclick=()=>{top=!top;draw();};
+  draw();return box;
 }
 
 /* ---------- playground ---------- */
@@ -236,7 +248,7 @@ function renderFull(){
     ns.forEach(n=>{const alg=OLL_ALGS[n];grid.appendChild(card({name:'OLL '+n,sub:alg.split(' ').length+' moves',alg},llDiagram(caseOf(alg),'oll'),'foll'+n));});});
   const p=document.getElementById('fullPllCards');
   PLL_GROUPS.forEach(([g,ns])=>{p.insertAdjacentHTML('beforeend',`<div class="group-title">${g} · ${ns.length}</div>`);const grid=document.createElement('div');grid.className='cards';p.appendChild(grid);
-    ns.forEach(n=>{const alg=PLL_ALGS[n];grid.appendChild(card({name:n+'-perm',sub:alg.split(' ').length+' moves',alg},llDiagram(caseOf(alg),'pll','all'),'fpll'+n));});});
+    ns.forEach(n=>{const alg=PLL_ALGS[n];grid.appendChild(card({name:n+'-perm',sub:alg.split(' ').length+' moves',alg},pllDia(caseOf(alg),'pll','all'),'fpll'+n));});});
 }
 
 /* ---------- COLL / ZBLL ---------- */
@@ -307,9 +319,25 @@ function ftDiagram(it){
   return S;
 }
 function initFT(){
-  const tabs=document.getElementById('ftTabs');let cur=0;
+  const tabs=document.getElementById('ftTabs'),dia=document.getElementById('ftDia');let cur=0,rig=null;
+  if(window.THREE&&window.Cube3D&&window.HandRig){
+    dia.innerHTML=`<div class="ft3d" id="ft3d"><div class="ft-now" id="ftNow" aria-live="polite"></div></div>
+      <div class="algline ft-ctl"><button class="primary" id="ftReplay">Play move</button><button id="ftPractice">Play practice</button>
+      <label class="muted" for="ftSpeed">Speed</label><select id="ftSpeed"><option value="0.3">Slow motion</option><option value="0.6" selected>Learning</option><option value="1">Normal</option><option value="1.8">Fast</option></select></div>
+      <p class="muted hint3d">Blue = the finger or hand doing the move. Drag to look from any side (fingers on the back are visible from behind).</p>`;
+    try{const c=new Cube3D(document.getElementById('ft3d'),{cam:[3.2,8.2,11.2],lookY:-0.7,speed:400});rig=new HandRig(c);}catch(e){rig=null;}
+  }
+  const now=t=>{const n=document.getElementById('ftNow');if(n)n.innerHTML=t;};
+  const playList=(alg)=>{if(!rig)return;let ms;try{ms=parse(alg);}catch(e){return;}
+    rig.mul=+document.getElementById('ftSpeed').value;
+    rig.play(ms,(m,label)=>now(m?`<code>${m.text}</code> ${label}`:'Done. Press play to watch again.'));};
   const show=i=>{cur=i;[...tabs.children].forEach((b,j)=>b.setAttribute('aria-selected',j===i));const it=FT[i];
-    document.getElementById('ftDia').replaceChildren(ftDiagram(it));
+    if(rig){const home=it.k==='Home grip';let pracOk=true;try{parse(it.prac);}catch(e){pracOk=false;}
+      document.getElementById('ftReplay').hidden=home;document.getElementById('ftPractice').hidden=!pracOk;
+      document.getElementById('ftReplay').onclick=()=>playList(it.k);document.getElementById('ftPractice').onclick=()=>playList(it.prac);
+      if(home){rig.reset();now('Home grip: thumbs on the front, index fingers on top, middle and ring fingers behind.');}
+      else playList(it.k);}
+    else dia.replaceChildren(ftDiagram(it));
     document.getElementById('ftText').innerHTML=`<h3>${it.k==='Home grip'?'Home grip':'Move <code>'+it.k+'</code>'}</h3><ol>${it.steps.map(s=>`<li>${s}</li>`).join('')}</ol><p><b>Common mistake:</b> ${it.mist}</p><p><b>Practice:</b> <code>${it.prac}</code></p>`;};
   FT.forEach((it,i)=>{const b=document.createElement('button');b.textContent=it.k;b.setAttribute('role','tab');b.onclick=()=>show(i);tabs.appendChild(b);});
   show(0);
@@ -385,7 +413,7 @@ function initZB(){
     host.replaceChildren();let ci=-1,grid,n=0;
     ZBLL.filter(z=>z[0]===set).forEach(([s,c,alg])=>{
       if(c!==ci){ci=c;n=0;host.insertAdjacentHTML('beforeend',`<div class="group-title">${set==='PLL'?'PLL':set+' · COLL case '+c}</div>`);grid=document.createElement('div');grid.className='cards';host.appendChild(grid);}
-      n++;grid.appendChild(card({name:(set==='PLL'?'PLL ':'ZBLL '+set+' ')+c+'.'+n,sub:alg.split(' ').length+' moves',alg},llDiagram(caseOf(alg),'pll'),idOf(set,c,n)));});
+      n++;grid.appendChild(card({name:(set==='PLL'?'PLL ':'ZBLL '+set+' ')+c+'.'+n,sub:alg.split(' ').length+' moves',alg},pllDia(caseOf(alg),'pll'),idOf(set,c,n)));});
     updateProgress();};
   ZB_SETS.forEach(([k,label])=>{const cnt=ZBLL.filter(z=>z[0]===k).length;const b=document.createElement('button');b.dataset.set=k;b.setAttribute('role','tab');b.innerHTML=`${label} <span class="cnt">${cnt}</span>`;b.onclick=()=>show(k);tabs.appendChild(b);});
   show(ZB_SETS.some(s=>s[0]===saved)?saved:'T');

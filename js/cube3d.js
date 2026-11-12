@@ -36,9 +36,9 @@
       this.renderer.domElement.setAttribute('role', 'img');
 
       this.scene = new THREE.Scene();
-      this.camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
-      this.camera.position.set(5.6, 4.9, 7.6);
-      this.camera.lookAt(0, -0.15, 0);
+      this.camera = new THREE.PerspectiveCamera(opt.fov || 30, 1, 0.1, 100);
+      this.camera.position.set(...(opt.cam || [5.6, 4.9, 7.6]));
+      this.camera.lookAt(0, opt.lookY != null ? opt.lookY : -0.15, 0);
       this.scene.add(new THREE.AmbientLight(0xffffff, 0.78));
       const key = new THREE.DirectionalLight(0xffffff, 0.45);
       key.position.set(4, 8, 6);
