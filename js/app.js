@@ -665,7 +665,7 @@ function route(){
   document.querySelectorAll('nav.bar a[href^="#"]').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+page));
   const on=document.querySelector('nav.bar a.on');if(on){const bar=on.parentElement;bar.scrollTo({left:on.offsetLeft-bar.clientWidth/2+on.clientWidth/2});}
   window.scrollTo(0,0);
-  document.title=(page?(document.querySelector('nav.bar a[href="#'+page+'"]')||{}).textContent+' · ':'')+(LANG==='lo'?'ຄູ່ມື CFOP 3x3':'CFOP 3x3 Guide');
+  document.title=(page?(document.querySelector('nav.bar a[href="#'+page+'"]')||{}).textContent+' · ':'')+'DannCube';
 }
 function initPages(){
   const label=id=>{const a=document.querySelector('nav.bar a[href="#'+id+'"]');return a?a.textContent.trim():id;};
