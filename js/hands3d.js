@@ -40,7 +40,7 @@
   }
 
   function describe(st) {
-    if (st.type === 'wrist') return (st.hand === 'R' ? 'Right' : 'Left') + ' wrist';
+    if (st.type === 'wrist') return st.hand === 'R' ? 'Right wrist' : 'Left wrist';
     if (st.type === 'flick') return (st.hand === 'R' ? 'Right ' : 'Left ') + FNAME[st.finger];
     return 'Turn';
   }

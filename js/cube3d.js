@@ -31,7 +31,7 @@
       this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       el.appendChild(this.renderer.domElement);
-      this.renderer.domElement.style.touchAction = 'none';
+      this.renderer.domElement.style.touchAction = opt.touch || 'pan-y';
       this.renderer.domElement.setAttribute('aria-label', 'Interactive 3D cube. Drag to rotate.');
       this.renderer.domElement.setAttribute('role', 'img');
 

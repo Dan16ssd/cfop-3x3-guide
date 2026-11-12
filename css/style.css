@@ -206,3 +206,55 @@ select{font:600 .9rem var(--text);padding:6px 10px;border-radius:8px;border:1px 
 .dual-ctl button{font-size:.72rem;padding:3px 8px}
 
 .card .dia .dual svg{width:150px;height:150px}
+
+/* rank */
+.rank{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:var(--surface-2);border-radius:var(--r);padding:14px 16px}
+.rank-badge{display:grid;justify-items:center;align-content:center;min-width:112px;padding:12px 14px;border-radius:12px;background:var(--rc);color:#fff;text-align:center;box-shadow:inset 0 -4px 0 rgba(0,0,0,.18)}
+.rank-badge span{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;opacity:.9}
+.rank-badge b{font-family:var(--display);font-size:1.25rem;line-height:1.15}
+.rank-txt{display:grid;gap:4px}
+.rank-time{font-family:var(--mono);font-weight:600;font-size:1.1rem}
+.pb{font-family:var(--text);font-size:.78rem;font-weight:700;background:var(--ok);color:#fff;padding:2px 8px;border-radius:999px;margin-left:6px;vertical-align:2px}
+.rank.pop .rank-badge{animation:pop .45s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:none;opacity:1}}
+.ladder{display:grid;gap:6px;margin-top:10px;max-width:520px}
+.ladder-head{margin-bottom:4px}
+.rung{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:8px 12px;border-radius:8px;background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--rc)}
+.rung span{font-family:var(--mono);font-size:.82rem;color:var(--muted)}
+.rung.on{background:var(--rc);color:#fff;border-color:var(--rc)}
+.rung.on span{color:#fff;opacity:.9}
+
+/* language button */
+nav.bar .lang{flex:none;position:sticky;right:0;margin-left:auto;display:flex;gap:2px;padding:3px;border-radius:999px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font:700 .8rem var(--text);box-shadow:-12px 0 10px var(--surface),16px 0 0 var(--surface)}
+nav.bar .lang span{padding:4px 10px;border-radius:999px;color:var(--muted)}
+nav.bar .lang span[data-l="lo"]{font-family:"Noto Sans Lao",var(--text)}
+nav.bar .lang[data-on="en"] span[data-l="en"],nav.bar .lang[data-on="lo"] span[data-l="lo"]{background:var(--accent);color:var(--accent-ink)}
+
+/* footer */
+footer{border-top:1px solid var(--line);margin-top:40px;padding:28px 0 calc(28px + env(safe-area-inset-bottom,0px));font-size:.85rem;color:var(--muted)}
+.foot{display:grid;gap:8px}
+.credit{font-size:1rem;color:var(--fg)}
+
+/* Lao */
+html[lang="lo"] body{font-family:"Noto Sans Lao",var(--text);line-height:1.75}
+html[lang="lo"] h1,html[lang="lo"] h2,html[lang="lo"] h3{font-family:"Noto Sans Lao",var(--display);line-height:1.4;letter-spacing:0}
+html[lang="lo"] select,html[lang="lo"] button{font-family:"Noto Sans Lao",var(--text)}
+
+/* phones */
+@media (max-width:520px){
+  body{font-size:15px}
+  .cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .card{padding:10px}
+  .card .dia{padding:6px}
+  .card .dia svg{width:100%;height:auto;max-width:120px}
+  .card .dia .dual svg{max-width:130px}
+  .card .alg{font-size:.78rem;word-break:break-word}
+  .card .hint{font-size:.78rem}
+  button,.sm{min-height:40px}
+  .stages{grid-template-columns:1fr 1fr}
+  .rank{grid-template-columns:1fr;justify-items:center;text-align:center}
+  .timer{padding:14px}
+  table{display:block;overflow-x:auto}
+  .cube3d{width:100%}
+}
+.dual-ctl{flex-wrap:wrap;justify-content:center}
