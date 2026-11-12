@@ -419,3 +419,8 @@ header.hero{padding-block:40px 8px}
 /* brand */
 nav.bar .brand span,.logo span{background:linear-gradient(90deg,#ffd23f,#ff9a4d);-webkit-background-clip:text;background-clip:text;color:transparent}
 .logo{font-family:var(--display);font-weight:900;font-size:1.5rem;letter-spacing:-.01em;margin-bottom:6px;color:#fff}
+
+nav.bar .brand{display:inline-flex;align-items:center;gap:6px}
+nav.bar .brand img{width:26px;height:26px}
+.logo{display:flex;align-items:center;gap:10px;font-size:1.9rem}
+.logo img{width:54px;height:54px}

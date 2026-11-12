@@ -1,3 +1,5 @@
+<p align="center"><img src="img/logo.svg" alt="DannCube" width="320"></p>
+
 # DannCube · CFOP 3x3 Guide
 
 A website for learning the CFOP method on the 3x3 cube, in English and Lao (ລາວ).
