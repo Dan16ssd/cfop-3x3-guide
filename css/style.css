@@ -424,3 +424,6 @@ nav.bar .brand{display:inline-flex;align-items:center;gap:6px}
 nav.bar .brand img{width:26px;height:26px}
 .logo{display:flex;align-items:center;gap:10px;font-size:1.9rem}
 .logo img{width:54px;height:54px}
+
+.sol-steps li.scr{border-left-color:#8b5cf6}
+.sol-steps li.scr small{white-space:normal;max-width:220px;text-align:right}

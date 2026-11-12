@@ -572,14 +572,16 @@ async function solveScramble(sc){
   const best=results[0];
   const cmp=['cross','xcross','xxcross'].map(k=>{const r=results.filter(x=>x.kind===k)[0];return r?`<span class="${r===best?'on':''}">${L(KIND_NAME[k])} <b>${r.n}</b></span>`:'';}).join('');
   const noZB=best.zb?results.find(r=>!r.zb):null;
+  const scrClean=sc.trim().split(/\s+/).filter(Boolean).join(' ');
+  const shown=[{label:L('Scramble'),moves:scrClean,scr:true,note:L('White on top, green in front.')},{label:L('Inspection'),moves:'z2',scr:true,note:L('Turn the cube over: white on the bottom, green in front.')},...best.steps];
   let gi=0;const flat=[];
-  best.steps.forEach((x,si)=>{x.toks=x.moves?x.moves.split(' ').map(t=>{flat.push({t,si});return `<span data-i="${gi++}">${t}</span>`;}).join(' '):'–';});
+  shown.forEach((x,si)=>{x.toks=x.moves?x.moves.split(' ').map(t=>{flat.push({t,si});return `<span data-i="${gi++}">${t}</span>`;}).join(' '):'–';});
   out.innerHTML=`<div class="sol-sum"><div><b>${best.n}</b><span>${L('moves')}</span></div><div><b>${(best.n/6).toFixed(1)} s</b><span>${L('at 6 TPS')}</span></div><div><b>${(best.n/10).toFixed(1)} s</b><span>${L('at 10 TPS')}</span></div></div>
     <p class="sol-cmp">${L('Best total by first step:')} ${cmp}</p>
-    <ol class="sol-steps"><li><span class="lbl">${L('Inspection')}</span><code>z2</code><small>${L('Hold white on the bottom, green in front.')}</small></li>${best.steps.map((x,si)=>`<li data-step="${si}"${x.ll?' class="ll"':''}><span class="lbl">${x.label}</span><code>${x.toks}</code><small>${Lt('moves',htm(x.moves))}</small></li>`).join('')}</ol>
+    <ol class="sol-steps">${shown.map((x,si)=>`<li data-step="${si}" class="${x.ll?'ll':''}${x.scr?' scr':''}"><span class="lbl">${x.label}</span><code>${x.toks}</code><small>${x.note||Lt('moves',htm(x.moves))}</small></li>`).join('')}</ol>
     ${noZB?`<p class="muted sol-alt">${Lt('noZB',noZB.n,noZB.steps.filter(x=>x.ll).map(x=>x.label).join(' + '))}</p>`:''}
     <div class="algline"><button id="solWatch">${L('Open in playground')}</button><button id="solCopy">${L('Copy solution')}</button></div>`;
-  solPlayer(toks,flat,best.steps);
+  solPlayer(toks,flat,shown);
   const full=best.steps.map(x=>x.moves).filter(Boolean).join(' ');
   document.getElementById('solWatch').onclick=()=>{document.getElementById('solveDlg').close();pg=solved();applyAlg(pg,toks.join(' '));queue=parse(full);qi=0;drawPg();drawSteps();status(L('Solution loaded. Press Next move to step through.'));document.getElementById('algIn').value=full;go('playground');};
   document.getElementById('solCopy').onclick=e=>{try{navigator.clipboard.writeText('z2 '+full);e.target.textContent=L('Copied');}catch(err){}};
@@ -616,12 +618,12 @@ function solPlayer(toks,flat,steps){
   if(!solCube){try{solCube=new Cube3D(document.getElementById('solCube'),{speed:300,touch:'none'});}catch(e){view.hidden=true;return;}}
   const mv=flat.map(f=>parse(f.t)[0]);
   let pos=0,model=null,playing=false;
-  const base=()=>{const m=solved();applyAlg(m,toks.join(' '));return m;};
+  const base=()=>{const m=solved();applyAlg(m,'z2');return m;};
   const paint=()=>{
     out.querySelectorAll('.sol-steps span[data-i]').forEach(sp=>{const i=+sp.dataset.i;sp.className=i<pos?'done':i===pos?'next':'';});
     const si=pos<flat.length?flat[pos].si:steps.length;
     out.querySelectorAll('.sol-steps li[data-step]').forEach(li=>li.classList.toggle('cur',+li.dataset.step===si));
-    now.innerHTML=pos>=flat.length?`<b>${L('Solved!')}</b> ${Lt('moves',flat.length)}`:`<span>${steps[flat[pos].si].label}</span> · ${L('Move')} ${pos+1}/${flat.length}: <code>${flat[pos].t}</code>`;
+    now.innerHTML=pos>=flat.length?`<b>${L('Solved!')}</b> ${Lt('moves',flat.filter(f=>!steps[f.si].scr).length)}`:`<span>${steps[flat[pos].si].label}</span> · ${L('Move')} ${pos+1}/${flat.length}: <code>${flat[pos].t}</code>`;
     document.getElementById('solPlay').textContent=playing?'❚❚ '+L('Pause'):'▶ '+L('Play');};
   const jump=p=>{clearInterval(solTimer);playing=false;solCube.clear();model=base();for(let i=0;i<p;i++)applyMove(model,mv[i]);pos=p;solCube.model=model;solCube.sync(model);paint();};
   const fwd=()=>{if(pos>=flat.length)return false;applyMove(model,mv[pos]);solCube.model=model;solCube.enqueue(mv[pos]);pos++;paint();return true;};
