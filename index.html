@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CFOP 3x3 Guide</title>
+<meta name="description" content="Learn the CFOP method for the 3x3 cube: cross, F2L, full OLL, full PLL, COLL, full ZBLL, finger tricks, drills and a 3D cube playground.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+
+<nav class="bar"><div class="wrap">
+  <a href="#notation">Notation</a>
+  <a href="#playground">3D Playground</a>
+  <a href="#cross"><span class="dot" style="background:var(--s-cross)"></span>Cross</a>
+  <a href="#f2l"><span class="dot" style="background:var(--s-f2l)"></span>F2L</a>
+  <a href="#oll"><span class="dot" style="background:var(--s-oll)"></span>OLL</a>
+  <a href="#pll"><span class="dot" style="background:var(--s-pll)"></span>PLL</a>
+  <a href="#fulloll">Full OLL</a>
+  <a href="#fullpll">Full PLL</a>
+  <a href="#coll">COLL</a>
+  <a href="#zbll">ZBLL</a>
+  <a href="#fingertricks">Finger tricks</a>
+  <a href="#drills">Drills</a>
+  <a href="#yiheng">Yiheng Wang training</a>
+  <a href="#timer">Timer</a>
+  <a href="#roadmap">Roadmap</a>
+</div></nav>
+
+<header class="hero"><div class="wrap hero-grid">
+  <div>
+    <div class="eyebrow">3x3 speedsolving · CFOP / Fridrich · drag the cube</div>
+    <h1>Solve the cube in <span>four stages</span>.</h1>
+    <div class="prose">
+      <p>CFOP is the method most world-class solvers use. You build a white cross, pair up and insert the first two layers, then finish the yellow layer with memorized algorithms. This guide starts with the 2-look last layer (10 OLL and 6 PLL algorithms), then goes on to COLL and ZBLL for sub-10 and sub-8 solving.</p>
+      <p class="muted">Hold the cube with white on the bottom and green in front. Every diagram on this page uses that orientation.</p>
+    </div>
+    <div class="stages">
+      <div class="stage" style="--c:var(--s-cross)"><b>Cross</b><small>White edges around the bottom center</small><span class="n">~8 moves</span></div>
+      <div class="stage" style="--c:var(--s-f2l)"><b>F2L</b><small>4 corner-edge pairs into slots</small><span class="n">~28 moves</span></div>
+      <div class="stage" style="--c:var(--s-oll)"><b>OLL</b><small>Make the top face all yellow</small><span class="n">2-look: 10 algs</span></div>
+      <div class="stage" style="--c:var(--s-pll)"><b>PLL</b><small>Move top pieces to their places</small><span class="n">2-look: 6 algs</span></div>
+    </div>
+    <div class="progress"><span id="progText">0 cases learned</span><div class="track"><div class="fill" id="progFill"></div></div></div>
+  </div>
+  <div class="hero-cube" id="heroCube"></div>
+</div></header>
+
+<main>
+<section class="chap" id="notation"><div class="wrap">
+  <div class="chap-head"><h2>Notation</h2></div>
+  <div class="prose"><p>Each letter is a face. A plain letter turns that face 90° clockwise, as if you were looking straight at that face. An apostrophe (prime) means counter-clockwise. A 2 means a half turn.</p></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Move</th><th>Layer</th><th>What it means</th></tr></thead>
+    <tbody>
+      <tr><td><code>R</code> / <code>R'</code></td><td>Right</td><td>Right face clockwise: the front of the right layer goes up. <code>R'</code> brings it down.</td></tr>
+      <tr><td><code>L</code> / <code>L'</code></td><td>Left</td><td>Left face clockwise: the front of the left layer goes down.</td></tr>
+      <tr><td><code>U</code> / <code>U'</code></td><td>Up</td><td>Top layer clockwise from above: the front pieces move to the left.</td></tr>
+      <tr><td><code>D</code> / <code>D'</code></td><td>Down</td><td>Bottom layer clockwise from below: the front pieces move to the right.</td></tr>
+      <tr><td><code>F</code> / <code>F'</code></td><td>Front</td><td>Front face clockwise: the top of the front layer moves right.</td></tr>
+      <tr><td><code>B</code> / <code>B'</code></td><td>Back</td><td>Back face clockwise, as seen from behind.</td></tr>
+      <tr><td><code>M</code></td><td>Middle slice</td><td>The slice between L and R, turned the same direction as <code>L</code>.</td></tr>
+      <tr><td><code>r</code> / <code>f</code></td><td>Wide moves</td><td>Turn the face and the middle slice next to it together. Also written <code>Rw</code>, <code>Fw</code>.</td></tr>
+      <tr><td><code>x</code> <code>y</code> <code>z</code></td><td>Whole cube</td><td>Rotate the whole cube like <code>R</code>, <code>U</code> and <code>F</code>.</td></tr>
+      <tr><td><code>U2</code></td><td>Half turn</td><td>Turn twice. Direction doesn't matter for the result.</td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<section class="chap" id="playground"><div class="wrap">
+  <div class="chap-head"><h2>3D Playground</h2></div>
+  <div class="prose"><p>A real 3D cube. Type any algorithm or tap moves and watch it turn. Every case card below has a <b>Try it</b> button: it loads the case here so you can step through the solution one move at a time.</p></div>
+  <div class="pg">
+    <div class="pg-views"><div id="pgIso" class="cube3d"></div><div id="pgNet"></div><p class="muted hint3d">Drag the cube to look around. Double-click to reset the view.</p></div>
+    <div class="pg-ctrl">
+      <div class="movepad" id="movepad"></div>
+      <div class="algline"><input id="algIn" type="text" spellcheck="false" autocomplete="off" value="R U R' U'" aria-label="Algorithm"><button class="primary" id="algApply">Apply</button></div>
+      <div class="algline speed"><label for="pgSpeed" class="muted">Turn speed</label><input type="range" id="pgSpeed" min="60" max="700" step="20" value="260"><b id="pgSpeedVal">260 ms</b></div>
+      <div class="algline"><button id="pgStep">Next move</button><button id="pgReset">Reset</button><button id="pgScramble">Scramble</button></div>
+      <div class="steps" id="pgSteps"></div>
+      <div class="status" id="pgStatus">Solved cube. White bottom, green front.</div>
+    </div>
+  </div>
+</div></section>
+
+<section class="chap" id="cross"><div class="wrap">
+  <div class="chap-head"><span class="tag" style="--c:var(--s-cross);background:var(--s-cross)">Stage 1</span><h2>Cross</h2></div>
+  <div class="prose">
+    <p>Put the four white edges around the white center so each edge's side color also matches its center. Solve it on the bottom from the start: flipping the cube after the cross wastes time and hides your F2L pieces.</p>
+    <p>A cross can always be solved in 8 moves or fewer. Use the 15-second inspection to plan the whole cross before you start turning.</p>
+  </div>
+  <div class="cols">
+    <div class="note"><h3>Beginner path</h3><ol><li>Solve the cross on top first (the "daisy" method is fine for a week).</li><li>Then switch to solving it on top but planning it.</li><li>Then solve it on the bottom, looking at the white stickers from the sides.</li></ol></div>
+    <div class="note"><h3>Plan in inspection</h3><ul><li>Find all 4 white edges.</li><li>Pick 2 that are easy to place relative to each other, then add the rest.</li><li>Say the moves in your head before you start.</li></ul></div>
+    <div class="note"><h3>Common cases</h3><ul><li>Edge in the bottom layer but flipped: take it out with one turn of its face, then insert it again from the side.</li><li>Edge in the middle layer: one turn (<code>R</code>, <code>R'</code>, <code>L</code>, <code>L'</code>) drops it in, but check you don't knock out a solved edge.</li><li>Edge on top, white facing up: <code>U</code> moves to line it up, then a half turn of that face.</li></ul></div>
+  </div>
+</div></section>
+
+<section class="chap" id="f2l"><div class="wrap">
+  <div class="chap-head"><span class="tag" style="background:var(--s-f2l)">Stage 2</span><h2>F2L · First two layers</h2></div>
+  <div class="prose">
+    <p>Each bottom corner goes into its slot together with the middle edge above it. Join them in the top layer, then insert the pair in one motion. Learn F2L intuitively: understand <i>why</i> each case works, so you can mirror it to any slot.</p>
+    <p class="muted">All cases below target the front-right slot (green and orange). Colored pieces are the pair and the cross; gray pieces don't matter. Front-left slot? Mirror the moves with <code>L</code> and <code>F</code>, or use <code>U' F' U F</code> style inserts to avoid rotating the cube.</p>
+  </div>
+  <div id="f2lCards"></div>
+</div></section>
+
+<section class="chap" id="oll"><div class="wrap">
+  <div class="chap-head"><span class="tag dark-ink" style="background:var(--s-oll)">Stage 3</span><h2>OLL · Orient the last layer</h2></div>
+  <div class="prose"><p>Make the whole top face yellow in two looks: first the yellow cross (edges), then the corners. Yellow stickers are shown in yellow, everything else in gray. Turn the top layer (<code>U</code>) until your cube matches the picture, then run the algorithm.</p></div>
+  <div class="group-title">Look 1 · Yellow cross (3 algorithms)</div>
+  <div class="cards" id="olleCards"></div>
+  <div class="group-title">Look 2 · Yellow corners (7 algorithms)</div>
+  <div class="cards" id="ollcCards"></div>
+</div></section>
+
+<section class="chap" id="pll"><div class="wrap">
+  <div class="chap-head"><span class="tag" style="background:var(--s-pll)">Stage 4</span><h2>PLL · Permute the last layer</h2></div>
+  <div class="prose"><p>The top is yellow. Now move each piece to its home. First fix the corners, then the edges. Arrows show where pieces travel when you do the algorithm.</p>
+  <p class="muted">Headlights are two matching corner stickers on one side. If you see headlights on every side, the corners are already solved: skip to edges.</p></div>
+  <div class="group-title">Look 1 · Corners (2 algorithms)</div>
+  <div class="cards" id="pllcCards"></div>
+  <div class="group-title">Look 2 · Edges (4 algorithms)</div>
+  <div class="cards" id="plleCards"></div>
+  <div class="group-title">Recognition trainer</div>
+  <div class="quiz">
+    <div id="quizDia"></div>
+    <div style="display:grid;gap:10px">
+      <div class="muted" style="font-size:.9rem">A random case from full OLL or full PLL, in a random top-layer angle. Name it before you reveal.</div>
+      <div class="ans" id="quizAns"></div>
+      <div class="algline"><button class="primary" id="quizReveal">Reveal</button><button id="quizNext">Next case</button></div>
+    </div>
+  </div>
+</div></section>
+
+<section class="chap" id="fulloll"><div class="wrap">
+  <div class="chap-head"><span class="tag dark-ink" style="background:var(--s-oll)">Full set</span><h2>Full OLL · 57 algorithms</h2></div>
+  <div class="prose"><p>Full OLL makes the top yellow in one look instead of two. Learn it after you're comfortable with 2-look and full PLL. A good order: the 7 cross cases (already done if you know 2-look), then the shapes you meet most often in your solves.</p>
+  <p class="muted">Cases are grouped by the shape the yellow stickers make. Numbers follow the standard OLL numbering. Some algorithms end with the top layer turned, so do a final U turn if needed (PLL comes next anyway).</p></div>
+  <div id="fullOllCards"></div>
+</div></section>
+
+<section class="chap" id="fullpll"><div class="wrap">
+  <div class="chap-head"><span class="tag" style="background:var(--s-pll)">Full set</span><h2>Full PLL · 21 algorithms</h2></div>
+  <div class="prose"><p>Full PLL solves the top layer's positions in one look. It's usually the first full set people learn, because it's only 21 algorithms and saves about 2–3 seconds over 2-look. Arrows show where each piece goes.</p>
+  <p class="muted">Recognize from two sides: look for headlights (matching corner colors on one side), blocks of 2 or 3 matching stickers, and whether opposite colors sit next to each other.</p></div>
+  <div id="fullPllCards"></div>
+</div></section>
+
+<section class="chap" id="coll"><div class="wrap">
+  <div class="chap-head"><span class="tag dark-ink" style="background:var(--s-oll)">Advanced</span><h2>COLL · Corners of the last layer</h2></div>
+  <div class="prose">
+    <p>COLL is used when the yellow cross is already on top but the corners aren't oriented. One algorithm orients <i>and</i> places the 4 corners, so the last step is always an edges-only PLL (Ua, Ub, H or Z), or the cube is just solved. That replaces two looks (corner OLL + corner PLL) with one.</p>
+    <p>There are 42 cases: 6 for each corner shape (Sune, Antisune, Pi, U, T, L), 4 for H, and 2 where the corners are already oriented and only need swapping. Recognize the shape first, then look at the side colors of the corners.</p>
+    <p class="muted">Diagrams show the corners' side colors. Edges are shown gray because COLL doesn't care where they are.</p>
+  </div>
+  <div class="callout">Each algorithm below combines short verified algorithms (Sune, Niklas, Headlights, Bowtie…) and was checked in a cube simulator, so every one is correct. Popular COLL sheets sometimes use faster, more specialized algorithms for some cases. Once you know a case, feel free to swap in one that suits your hands. "⁻¹" means do that algorithm backwards (inverse).</div>
+  <div id="collCards"></div>
+</div></section>
+
+<section class="chap" id="zbll"><div class="wrap">
+  <div class="chap-head"><span class="tag" style="background:var(--s-pll)">Expert</span><h2>ZBLL · The whole last layer in one look</h2></div>
+  <div class="prose">
+    <p>ZBLL solves the entire last layer with one algorithm when the yellow cross is already formed. It is what most sub-8 solvers work toward. It has <b>493 cases</b>, so nobody learns it in one go. Solvers add it set by set over months or years.</p>
+    <p>ZBLL only works if all 4 yellow edges are already oriented when you reach the last layer. You make that happen while inserting the last F2L pair, with an edge-control technique such as ZBLS or VHLS. Without edge control, about 7 out of 8 solves won't have the cross ready.</p>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Subset</th><th>Corner shape</th><th>Cases</th><th>Suggested order</th></tr></thead>
+    <tbody>
+      <tr><td>ZBLL T</td><td>T (Chameleon)</td><td>72</td><td>1st: very common, recognizable</td></tr>
+      <tr><td>ZBLL U</td><td>U (Headlights)</td><td>72</td><td>2nd</td></tr>
+      <tr><td>ZBLL L</td><td>L (Bowtie)</td><td>72</td><td>3rd</td></tr>
+      <tr><td>ZBLL S / AS</td><td>Sune / Antisune</td><td>72 + 72</td><td>4th: many short algorithms</td></tr>
+      <tr><td>ZBLL Pi</td><td>Pi</td><td>72</td><td>5th</td></tr>
+      <tr><td>ZBLL H</td><td>H</td><td>40</td><td>6th</td></tr>
+      <tr><td>PLL</td><td>All oriented</td><td>21</td><td>Learn before ZBLL</td></tr>
+    </tbody>
+  </table></div>
+  <div class="cols">
+    <div class="note"><h3>Before you start ZBLL</h3><ul><li>Full OLL and full PLL learned and fast.</li><li>COLL learned (each COLL case is the base of a ZBLL set).</li><li>Consistently sub-10 and comfortable with edge control on the last pair.</li></ul></div>
+    <div class="note"><h3>How to recognize a case</h3><ul><li>Identify the COLL case (corner shape + corner colors).</li><li>Then look at where the edges are relative to the corners. Each COLL case splits into 12 ZBLL cases.</li><li>Drill recognition with the trainer before speed.</li></ul></div>
+    <div class="note"><h3>Where to get full sets</h3><p>Community algorithm databases such as <a href="https://www.speedcubedb.com/" target="_blank" rel="noopener">SpeedCubeDB</a> list every ZBLL case with several algorithm choices.</p></div>
+  </div>
+  <div class="group-title">Full ZBLL · 493 algorithms</div>
+  <div class="callout">These algorithms were found by a computer search over R, U, F and D moves, and every one was checked in the cube simulator. They're short (12.8 moves on average), but not always the most finger-friendly. For some cases you may prefer an alternative from a community sheet. Each diagram shows the exact case its algorithm solves, so you can compare.</div>
+  <div class="zb-tabs" id="zbTabs" role="tablist"></div>
+  <div id="zbllCards"></div>
+</div></section>
+
+<section class="chap" id="fingertricks"><div class="wrap">
+  <div class="chap-head"><h2>Finger tricks tutorial</h2></div>
+  <div class="prose"><p>Pick a move to see where each finger sits and which one does the turn. The diagram is the cube unfolded: green front in the middle, yellow top above, red left, orange right, white bottom. Dots above the top face are fingers resting on the back of the cube.</p></div>
+  <div class="ft">
+    <div class="ft-tabs" id="ftTabs" role="tablist"></div>
+    <div class="ft-body">
+      <div class="ft-dia" id="ftDia"></div>
+      <div class="ft-text" id="ftText"></div>
+    </div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--hand-l)"></i>Left hand</span>
+      <span><i class="sw" style="background:var(--hand-r)"></i>Right hand</span>
+      <span><i class="sw" style="background:var(--accent)"></i>Finger doing the move</span>
+      <span><b>T</b> thumb · <b>I</b> index · <b>M</b> middle · <b>R</b> ring</span>
+    </div>
+  </div>
+  <div class="cols">
+    <div class="note"><h3>Grip pressure</h3><ul><li>Hold just firmly enough that the cube won't fall.</li><li>A tight grip slows every flick and causes lockups.</li><li>Your thumbs carry most of the cube's weight.</li></ul></div>
+    <div class="note"><h3>Wrist vs. fingers</h3><ul><li><code>R</code>, <code>L</code> and <code>r</code> come from the wrist.</li><li><code>U</code>, <code>U'</code>, <code>D</code>, <code>F</code>, <code>M</code> are single-finger flicks.</li><li>After every wrist turn, return to home grip.</li></ul></div>
+    <div class="note"><h3>Avoid</h3><ul><li>Cube rotations (<code>y</code>) in F2L when an <code>F</code> or <code>U'</code> insert works.</li><li>Looking at your hands.</li><li>Pausing between moves of an algorithm you know.</li></ul></div>
+  </div>
+</div></section>
+
+<section class="chap" id="drills"><div class="wrap">
+  <div class="chap-head"><h2>Drills</h2></div>
+  <div class="prose"><p>Every drill brings a solved cube back to solved after the listed number of reps, so you can check yourself. The small labels under each move show which finger does it.</p>
+    <p class="muted">How to drill: (1) do it slowly 5 times, saying the fingers out loud. (2) 5 times with the metronome at 60–90 bpm. (3) Time a full set with the drill timer. Beat your best, then raise the metronome.</p></div>
+  <div class="fkey"><span><b>RW</b> right wrist</span><span><b>LW</b> left wrist</span><span><b>RI</b> right index</span><span><b>LI</b> left index</span><span><b>RT</b> right thumb</span><span><b>LR</b> left ring</span><span><b>RR</b> right ring</span></div>
+  <div class="cards" id="drillCards"></div>
+  <div class="timer" id="drillTimer">
+    <div class="algline" style="justify-content:center;align-items:center"><label for="drillSel" class="muted" style="font-size:.9rem">Drill timer</label><select id="drillSel"></select></div>
+    <div class="scr" id="drillAlg"></div>
+    <div class="clock" id="dclock" tabindex="0" role="button" aria-label="Drill timer: tap to start and stop">0.00</div>
+    <div class="stats"><span>Best <b id="dBest">–</b></span><span>Last 5 <b id="dLast">–</b></span></div>
+    <p class="muted" style="text-align:center;font-size:.85rem">Tap the clock (or press Enter) to start, tap again when the cube is solved.</p>
+  </div>
+  <div class="cols">
+    <div class="note"><h3>Metronome turning</h3><p>One move per click through a whole solve. If you can't find the next piece in time, slow down. This trains look-ahead.</p>
+      <div class="metro"><button id="metroBtn">Start</button><input type="range" id="bpm" min="40" max="240" step="5" value="90" aria-label="Beats per minute"><span class="beat" id="beat"></span><b id="bpmVal" style="font-family:var(--mono)">90 bpm</b></div>
+      <p class="muted" style="font-size:.82rem">Start near 60–90 bpm. Add 10 when a full solve has no pauses.</p></div>
+    <div class="note"><h3>Blind cross</h3><p>Inspect for 15 seconds, close your eyes, solve the cross. Open your eyes and check. Forces full cross planning.</p></div>
+    <div class="note"><h3>Slow solves</h3><p>Half speed, zero pauses. A solver who never stops at 3 moves per second beats one who sprints at 6 and pauses.</p></div>
+    <div class="note"><h3>No-rotation F2L</h3><p>Solve the cross, then F2L without any <code>y</code>. Count rotations and bring it to zero.</p></div>
+  </div>
+</div></section>
+
+<section class="chap" id="yiheng"><div class="wrap">
+  <div class="chap-head"><h2>Train like Yiheng Wang</h2></div>
+  <div class="prose">
+    <p>Yiheng Wang is a Chinese speedcuber and 3x3 world-record holder who solves with CFOP. His training details are not published as an official program, but a few habits are on record:</p>
+  </div>
+  <div class="cols">
+    <div class="note"><h3>Practice almost every day</h3><p>In his Guinness World Records profile he says he practises cubing almost every day.</p><p class="src">Source: <a href="https://kids.guinnessworldrecords.com/records/young-achievers/yiheng-wang" target="_blank" rel="noopener">Guinness World Records</a></p></div>
+    <div class="note"><h3>Review your own solves</h3><p>He watches videos of his solves to find where he can get faster.</p><p class="src">Source: <a href="https://kids.guinnessworldrecords.com/records/young-achievers/yiheng-wang" target="_blank" rel="noopener">Guinness World Records</a></p></div>
+    <div class="note"><h3>Plan, then focus on rhythm</h3><p>He predicts the solution during inspection so the solve itself is about rhythm, not searching.</p><p class="src">Source: <a href="https://kids.guinnessworldrecords.com/records/young-achievers/yiheng-wang" target="_blank" rel="noopener">Guinness World Records</a></p></div>
+    <div class="note"><h3>Coached, focused volume</h3><p>He trained up to six hours a day before competitions with his coach Li Chunxiao, later dropping to one or two hours a day.</p><p class="src">Source: <a href="https://en.wikipedia.org/wiki/Yiheng_Wang" target="_blank" rel="noopener">Wikipedia</a></p></div>
+  </div>
+  <div class="callout">The routine below is <b>this guide's adaptation</b> of those habits for a solver learning CFOP. It is not an official plan from Yiheng Wang or his coach.</div>
+  <div class="group-title">Daily session · about 60 minutes</div>
+  <div class="week">
+    <div class="blk"><span class="min">10 min</span><b>Warm-up drills</b><span class="muted">Sexy move, sledgehammer and U-perm drills from the table above. Light grip, no pauses.</span></div>
+    <div class="blk"><span class="min">10 min</span><b>Inspection planning</b><span class="muted">Scramble, plan the cross (later: cross + first pair) in 15 s, then execute without stopping. Check whether your plan was right.</span></div>
+    <div class="blk"><span class="min">15 min</span><b>Rhythm solves</b><span class="muted">Untimed solves with the metronome. Find a speed where you never stop, and hold it.</span></div>
+    <div class="blk"><span class="min">15 min</span><b>Timed sessions</b><span class="muted">Do full averages of 5 and 12 on the timer. Write down your ao12 each day.</span></div>
+    <div class="blk"><span class="min">10 min</span><b>Film and review</b><span class="muted">Record 3 solves. Watch them slowed down. Mark every pause and which stage it happened in. Tomorrow's drills target that stage.</span></div>
+  </div>
+  <div class="group-title">Weekly rhythm</div>
+  <div class="tbl"><table>
+    <thead><tr><th>Day</th><th>Focus</th></tr></thead>
+    <tbody>
+      <tr><td>Mon</td><td>Cross: blind-cross drill, planning cross + first pair</td></tr>
+      <tr><td>Tue</td><td>F2L: slow no-rotation solves, metronome</td></tr>
+      <tr><td>Wed</td><td>Last layer: recognition trainer, algorithm drills with finger tricks</td></tr>
+      <tr><td>Thu</td><td>Rhythm: metronome full solves, raise bpm by 10 when clean</td></tr>
+      <tr><td>Fri</td><td>Mock competition: 5 solves with full inspection, take the middle 3 as your average</td></tr>
+      <tr><td>Sat</td><td>Long session: high volume of timed solves, film a few</td></tr>
+      <tr><td>Sun</td><td>Light day: review the week's footage and times, learn one new algorithm</td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<section class="chap" id="timer"><div class="wrap">
+  <div class="chap-head"><h2>Timer</h2></div>
+  <div class="prose"><p>Hold <b>Space</b> (or press and hold the clock on a phone) until it turns green, release to start, press any key or tap to stop. Scrambles are random 20-move sequences: scramble with white on top and green in front, the WCA way.</p></div>
+  <div class="timer">
+    <div class="scr" id="scr"></div>
+    <div class="algline" style="justify-content:center"><button class="sm" id="newScr">New scramble</button><button class="sm" id="scrToPg">Show in playground</button></div>
+    <div class="clock" id="clock" tabindex="0" role="button" aria-label="Timer">0.00</div>
+    <div class="stats"><span>Best <b id="stBest">–</b></span><span>ao5 <b id="stAo5">–</b></span><span>ao12 <b id="stAo12">–</b></span><span>Solves <b id="stN">0</b></span></div>
+    <div class="times" id="times"></div>
+    <div class="algline" style="justify-content:center"><button class="sm" id="delLast">Delete last</button><button class="sm" id="clearTimes">Clear session</button></div>
+  </div>
+</div></section>
+
+<section class="chap" id="roadmap"><div class="wrap">
+  <div class="chap-head"><h2>Roadmap</h2></div>
+  <div class="road">
+    <div class="step"><b>Sub-2:00</b><div>Learn notation and solve the cube with any beginner method. Learn the cross on the bottom.</div></div>
+    <div class="step"><b>Sub-1:00</b><div>Intuitive F2L (the 12 cases here). 2-look OLL and PLL. Start finger tricks.</div></div>
+    <div class="step"><b>Sub-30</b><div>No-rotation F2L, all slots. Fluent finger tricks. Daily drills and metronome solves.</div></div>
+    <div class="step"><b>Sub-20</b><div>Full PLL (21 algorithms). Plan cross + first pair in inspection. Look-ahead with no pauses.</div></div>
+    <div class="step"><b>Sub-15</b><div>Full OLL (57), advanced F2L cases, film-and-review training like the routine above.</div></div>
+    <div class="step"><b>Sub-10</b><div>COLL (42 cases) for solves with the cross already on top. Plan an x-cross (cross plus first pair) in inspection. Turn smoothly at roughly 8–10 moves per second with almost no pauses. Use multi-slotting: set up the next pair while inserting the current one.</div></div>
+    <div class="step"><b>Sub-8</b><div>Edge control on the last pair (ZBLS/VHLS) and ZBLL subsets, starting with T and U. Plan the full x-cross every solve. Short bursts above 11 moves per second. Do daily drills, film your solves and target your slowest stage.</div></div>
+  </div>
+</div></section>
+</main>
+
+<footer><div class="wrap">CFOP 3x3 Guide · All diagrams are generated by a cube simulator from the listed algorithms. Color scheme: white bottom, yellow top, green front, orange right.</div></footer>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/zbll-data.js"></script>
+<script src="js/cube3d.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
