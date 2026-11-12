@@ -134,15 +134,33 @@ function updateProgress(){const all=allIds.size||1;const n=[...learned].filter(i
 const posName=p=>({'1,1,0':'top-right','0,1,1':'top-front','-1,1,0':'top-left','0,1,-1':'top-back'})[p.join(',')]||'in the slot';
 const dirName={U:'up',F:'front',R:'right',L:'left',B:'back',D:'down'};
 
+/* ---------- triggers: split algorithms into chunks you already know ---------- */
+const TRIGGERS=[
+ ['Sune',"R U R' U R U2 R'"],['Antisune',"R U2 R' U' R U' R'"],['Antisune',"R' U' R U' R' U2 R"],['Sune',"L' U' L U' L' U2 L"],
+ ['Sexy',"R U R' U'"],['Reverse sexy',"U R U' R'"],['Left sexy',"L' U' L U"],['Left reverse sexy',"U' L' U L"],
+ ['Wide sexy',"r U R' U'"],['Sledge',"R' F R F'"],['Hedge',"F R' F' R"],['Wide sledge',"r' F R F'"],
+ ['Anti-sexy',"R' U' R U"],['Left sexy',"L U L' U'"],
+ ['Insert',"R U R'"],['Insert',"R U' R'"],['Insert',"R U2 R'"],['Insert',"R' U' R"],['Insert',"R' U R"],['Insert',"R' U2 R"],
+ ['Insert',"L' U' L"],['Insert',"L' U L"],['Insert',"L U L'"],['Insert',"L U' L'"],['Insert',"F' U' F"],['Insert',"F' U F"],['Insert',"F U F'"],['Insert',"F U' F'"],
+ ['H-trigger',"M2 U M2"],['H-trigger',"M2 U' M2"],['M2 U2 M2',"M2 U2 M2"]
+].map(([n,a])=>[n,a.split(' ')]).sort((a,b)=>b[1].length-a[1].length);
+function memo(alg){
+  const t=alg.replace(/[()]/g,'').trim().split(/\s+/),out=[];let i=0,hit=0;
+  while(i<t.length){const tr=TRIGGERS.find(([,m])=>m.every((x,k)=>t[i+k]===x));
+    if(tr){out.push({n:tr[0],m:tr[1].join(' ')});i+=tr[1].length;hit+=tr[1].length;}
+    else{const last=out[out.length-1];if(last&&!last.n)last.m+=' '+t[i];else out.push({m:t[i]});i++;}}
+  return {html:out.map(c=>c.n?`<span class="trg" title="${c.m}"><b>${L(c.n)}</b><i>${c.m}</i></span>`:`<code>${c.m}</code>`).join('<em>·</em>'),cover:hit/t.length};
+}
 function moveText(m){return m.face+(m.k===2?'2':m.k===-1?"'":'');}
 function scrambleOf(alg){try{return invert(parse(alg)).map(moveText).join(' ');}catch(e){return '';}}
 function card(item,diagram,id){
   allIds.add(id);const d=document.createElement('div');d.className='card'+(learned.has(id)?' learned':'');
   const dia=document.createElement('div');dia.className='dia';dia.appendChild(diagram);d.appendChild(dia);
-  d.insertAdjacentHTML('beforeend',`<div class="nm"><b>${L(item.name)}</b>${item.sub?`<span>${String(item.sub).replace(/^(\d+) moves$/,(m,n)=>Lt('moves',n))}</span>`:''}</div><div class="alg">${item.alg}</div><div class="scr-line"><span>${L('Scramble')}</span><code>${scrambleOf(item.alg)}</code></div>${item.tip?`<div class="hint">${L(item.tip)}</div>`:''}`);
+  d.insertAdjacentHTML('beforeend',`<div class="nm"><b>${L(item.name)}</b>${item.sub?`<span>${String(item.sub).replace(/^(\d+) moves$/,(m,n)=>Lt('moves',n))}</span>`:''}</div><div class="alg">${item.alg}</div><div class="scr-line"><span>${L('Scramble')}</span><code>${scrambleOf(item.alg)}</code></div>${(()=>{const m=memo(item.alg);return m.cover>0?`<div class="mem"><span class="mem-h">${L('Memorize as')}</span>${m.html}</div>`:'';})()}${item.tip?`<div class="hint">${L(item.tip)}</div>`:''}`);
   const row=document.createElement('div');row.className='row';
   row.innerHTML=`<label class="chk"><input type="checkbox" id="lr-${id}" ${learned.has(id)?'checked':''}> ${L('Learned')}</label>`;
   const b=document.createElement('button');b.className='sm';b.textContent=L('Try it');b.onclick=()=>loadCase(item.alg,L(item.name));row.appendChild(b);
+  if(item.easy){const e=document.createElement('button');e.className='sm easy-b';e.textContent=L('Easy way');e.onclick=()=>toggleEasy(d,item);row.appendChild(e);}
   row.querySelector('input').onchange=e=>{e.target.checked?learned.add(id):learned.delete(id);d.classList.toggle('learned',e.target.checked);saveLearned();};
   d.appendChild(row);return d;
 }
@@ -183,7 +201,7 @@ function drawPg(animated){document.getElementById('pgNet').replaceChildren(netDi
   else document.getElementById('pgIso').replaceChildren(isoDiagram(pg,null,'iso'));}
 function drawSteps(){const h=document.getElementById('pgSteps');h.replaceChildren();queue.forEach((m,i)=>{const sp=document.createElement('span');sp.textContent=m.text;if(i<qi)sp.className='done';else if(i===qi)sp.className='next';h.appendChild(sp);});document.getElementById('pgStep').disabled=qi>=queue.length;}
 function status(t,err){const s=document.getElementById('pgStatus');s.textContent=t;s.classList.toggle('err',!!err);}
-function loadCase(alg,name){pg=solved();applyAlg(pg,invert(parse(alg)));queue=parse(alg);qi=0;drawPg();drawSteps();status(Lt('loaded',name));document.getElementById('algIn').value=alg;document.getElementById('playground').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
+function loadCase(alg,name){pg=solved();applyAlg(pg,invert(parse(alg)));queue=parse(alg);qi=0;drawPg();drawSteps();status(Lt('loaded',name));document.getElementById('algIn').value=alg;go('playground');}
 function initPg(){
   const pad=document.getElementById('movepad');
   ["R","R'","L","L'","U","U'","D","D'","F","F'","B","B'","M","M'","R2","U2","x","y"].forEach(m=>{const b=document.createElement('button');b.textContent=m;b.onclick=()=>{parse(m).forEach(pgMove);queue=[];qi=0;drawPg(true);drawSteps();status(Lt('did',m));};pad.appendChild(b);});
@@ -250,11 +268,11 @@ function initTimer(){
     if(state==='idle'||state==='done'){state='holding';clock.className='clock hold';holdT=setTimeout(()=>{if(state==='holding'){state='ready';clock.className='clock ready';clock.textContent='0.00';}},300);}};
   const up=()=>{if(state==='stopped'){state='done';return;}if(state==='holding'){clearTimeout(holdT);state='idle';clock.className='clock';}
     else if(state==='ready'){state='running';clock.className='clock';t0=performance.now();tick();}};
-  document.addEventListener('keydown',e=>{if(['INPUT','SELECT'].includes(e.target.tagName))return;if(state==='running'){e.preventDefault();down();return;}if(e.code==='Space'&&!e.repeat){const r=clock.getBoundingClientRect();if(r.bottom<0||r.top>innerHeight)return;e.preventDefault();down();}});
+  document.addEventListener('keydown',e=>{if(['INPUT','SELECT'].includes(e.target.tagName))return;if(state==='running'){e.preventDefault();down();return;}if(e.code==='Space'&&!e.repeat){if(!clock.offsetParent)return;const r=clock.getBoundingClientRect();if(r.bottom<0||r.top>innerHeight)return;e.preventDefault();down();}});
   document.addEventListener('keyup',e=>{if(e.target.tagName==='INPUT')return;if(e.code==='Space'||state==='stopped'){up();}});
   clock.addEventListener('pointerdown',e=>{e.preventDefault();down();});clock.addEventListener('pointerup',e=>{e.preventDefault();up();});
   document.getElementById('newScr').onclick=newScr;
-  document.getElementById('scrToPg').onclick=()=>{pg=solved();applyAlg(pg,'z2 '+scr.textContent+' z2');queue=[];qi=0;drawPg();drawSteps();status(L('Timer scramble loaded (scrambled white-top, shown white-bottom).'));document.getElementById('playground').scrollIntoView();};
+  document.getElementById('scrToPg').onclick=()=>{pg=solved();applyAlg(pg,'z2 '+scr.textContent+' z2');queue=[];qi=0;drawPg();drawSteps();status(L('Timer scramble loaded (scrambled white-top, shown white-bottom).'));go('playground');};
   document.getElementById('delLast').onclick=()=>{times.pop();drawTimes();};
   let armed=false;const cl=document.getElementById('clearTimes');cl.onclick=()=>{if(!armed){armed=true;cl.textContent=L('Click again to clear');setTimeout(()=>{armed=false;cl.textContent=L('Clear session');},2500);return;}times=[];drawTimes();armed=false;cl.textContent=L('Clear session');};
   drawTimes();
@@ -282,10 +300,10 @@ const PLL_GROUPS=[['Edges only',['Ua','Ub','H','Z']],['Corners only',['Aa','Ab',
 function renderFull(){
   const o=document.getElementById('fullOllCards');
   OLL_GROUPS.forEach(([g,ns])=>{o.insertAdjacentHTML('beforeend',`<div class="group-title">${L(g)} · ${ns.length}</div>`);const grid=document.createElement('div');grid.className='cards';o.appendChild(grid);
-    ns.forEach(n=>{const alg=OLL_ALGS[n];grid.appendChild(card({name:'OLL '+n,sub:alg.split(' ').length+' moves',alg},llDiagram(caseOf(alg),'oll'),'foll'+n));});});
+    ns.forEach(n=>{const alg=OLL_ALGS[n];grid.appendChild(card({name:'OLL '+n,sub:alg.split(' ').length+' moves',alg,easy:'oll'},llDiagram(caseOf(alg),'oll'),'foll'+n));});});
   const p=document.getElementById('fullPllCards');
   PLL_GROUPS.forEach(([g,ns])=>{p.insertAdjacentHTML('beforeend',`<div class="group-title">${L(g)} · ${ns.length}</div>`);const grid=document.createElement('div');grid.className='cards';p.appendChild(grid);
-    ns.forEach(n=>{const alg=PLL_ALGS[n];grid.appendChild(card({name:n+'-perm',sub:alg.split(' ').length+' moves',alg},pllDia(caseOf(alg),'pll','all'),'fpll'+n));});});
+    ns.forEach(n=>{const alg=PLL_ALGS[n];grid.appendChild(card({name:n+'-perm',sub:alg.split(' ').length+' moves',alg,easy:'all'},pllDia(caseOf(alg),'pll','all'),'fpll'+n));});});
 }
 
 /* ---------- COLL / ZBLL ---------- */
@@ -306,7 +324,7 @@ function renderCOLL(){
     if(shape!==g){g=shape;n=0;host.insertAdjacentHTML('beforeend',`<div class="group-title">${L(COLL_GROUPS[shape])}</div>`);grid=document.createElement('div');grid.className='cards';host.appendChild(grid);}
     n++;
     const name=(shape==='Oriented'?(n===1?'Adjacent swap':'Diagonal swap'):shape+' '+n);
-    grid.appendChild(card({name,sub:alg.split(' ').length+' moves',alg,tip:Lt('built',from)},llDiagram(caseOf(alg),'coll'),'coll'+i));
+    grid.appendChild(card({name,sub:alg.split(' ').length+' moves',alg,tip:Lt('built',from),easy:'all'},llDiagram(caseOf(alg),'coll'),'coll'+i));
   });
 }
 
@@ -409,7 +427,7 @@ function initDrills(){
     const toks=parse(d.alg).map(m=>`<span class="tok"><b>${m.text}</b><i>${FINGER[m.text]||''}</i></span>`).join('');
     c.innerHTML=`<div class="nm"><b>${d.name}</b><span>${Lt('xSolved',d.n)}</span></div><div class="toks">${toks}</div><div class="hint">${L(d.why)}</div><div class="hint"><b>${L('Target:')}</b> ${Lt('target',d.t)}</div>`;
     const row=document.createElement('div');row.className='row';
-    const b1=document.createElement('button');b1.className='sm';b1.textContent=L('Try it');b1.onclick=()=>{pg=solved();queue=[];for(let k=0;k<d.n;k++)queue.push(...parse(d.alg));qi=0;drawPg();drawSteps();document.getElementById('algIn').value=d.alg;status(Lt('queued',d.name,d.n));document.getElementById('playground').scrollIntoView();};
+    const b1=document.createElement('button');b1.className='sm';b1.textContent=L('Try it');b1.onclick=()=>{pg=solved();queue=[];for(let k=0;k<d.n;k++)queue.push(...parse(d.alg));qi=0;drawPg();drawSteps();document.getElementById('algIn').value=d.alg;status(Lt('queued',d.name,d.n));go('playground');};
     const b2=document.createElement('button');b2.className='sm';b2.textContent=L('Time it');b2.onclick=()=>{sel.value=i;sel.onchange();document.getElementById('drillTimer').scrollIntoView({block:'center'});};
     row.append(b1,b2);c.appendChild(row);host.appendChild(c);
     const o=document.createElement('option');o.value=i;o.textContent=d.name+' ×'+d.n;sel.appendChild(o);});
@@ -450,7 +468,7 @@ function initZB(){
     host.replaceChildren();let ci=-1,grid,n=0;
     ZBLL.filter(z=>z[0]===set).forEach(([s,c,alg])=>{
       if(c!==ci){ci=c;n=0;host.insertAdjacentHTML('beforeend',`<div class="group-title">${set==='PLL'?'PLL':set+' · '+Lt('collCase',c)}</div>`);grid=document.createElement('div');grid.className='cards';host.appendChild(grid);}
-      n++;grid.appendChild(card({name:(set==='PLL'?'PLL ':'ZBLL '+set+' ')+c+'.'+n,sub:alg.split(' ').length+' moves',alg},pllDia(caseOf(alg),'pll'),idOf(set,c,n)));});
+      n++;grid.appendChild(card({name:(set==='PLL'?'PLL ':'ZBLL '+set+' ')+c+'.'+n,sub:alg.split(' ').length+' moves',alg,easy:'all'},pllDia(caseOf(alg),'pll'),idOf(set,c,n)));});
     updateProgress();};
   ZB_SETS.forEach(([k,label])=>{const cnt=ZBLL.filter(z=>z[0]===k).length;const b=document.createElement('button');b.dataset.set=k;b.setAttribute('role','tab');b.innerHTML=`${L(label)} <span class="cnt">${cnt}</span>`;b.onclick=()=>show(k);tabs.appendChild(b);});
   show(ZB_SETS.some(s=>s[0]===saved)?saved:'T');
@@ -554,31 +572,109 @@ async function solveScramble(sc){
   const best=results[0];
   const cmp=['cross','xcross','xxcross'].map(k=>{const r=results.filter(x=>x.kind===k)[0];return r?`<span class="${r===best?'on':''}">${L(KIND_NAME[k])} <b>${r.n}</b></span>`:'';}).join('');
   const noZB=best.zb?results.find(r=>!r.zb):null;
+  let gi=0;const flat=[];
+  best.steps.forEach((x,si)=>{x.toks=x.moves?x.moves.split(' ').map(t=>{flat.push({t,si});return `<span data-i="${gi++}">${t}</span>`;}).join(' '):'–';});
   out.innerHTML=`<div class="sol-sum"><div><b>${best.n}</b><span>${L('moves')}</span></div><div><b>${(best.n/6).toFixed(1)} s</b><span>${L('at 6 TPS')}</span></div><div><b>${(best.n/10).toFixed(1)} s</b><span>${L('at 10 TPS')}</span></div></div>
     <p class="sol-cmp">${L('Best total by first step:')} ${cmp}</p>
-    <ol class="sol-steps"><li><span class="lbl">${L('Inspection')}</span><code>z2</code><small>${L('Hold white on the bottom, green in front.')}</small></li>${best.steps.map(x=>`<li${x.ll?' class="ll"':''}><span class="lbl">${x.label}</span><code>${x.moves||'–'}</code><small>${Lt('moves',htm(x.moves))}</small></li>`).join('')}</ol>
+    <ol class="sol-steps"><li><span class="lbl">${L('Inspection')}</span><code>z2</code><small>${L('Hold white on the bottom, green in front.')}</small></li>${best.steps.map((x,si)=>`<li data-step="${si}"${x.ll?' class="ll"':''}><span class="lbl">${x.label}</span><code>${x.toks}</code><small>${Lt('moves',htm(x.moves))}</small></li>`).join('')}</ol>
     ${noZB?`<p class="muted sol-alt">${Lt('noZB',noZB.n,noZB.steps.filter(x=>x.ll).map(x=>x.label).join(' + '))}</p>`:''}
-    <div class="algline"><button class="primary" id="solWatch">${L('Watch in 3D')}</button><button id="solCopy">${L('Copy solution')}</button></div>`;
+    <div class="algline"><button id="solWatch">${L('Open in playground')}</button><button id="solCopy">${L('Copy solution')}</button></div>`;
+  solPlayer(toks,flat,best.steps);
   const full=best.steps.map(x=>x.moves).filter(Boolean).join(' ');
-  document.getElementById('solWatch').onclick=()=>{document.getElementById('solveDlg').close();pg=solved();applyAlg(pg,toks.join(' '));queue=parse(full);qi=0;drawPg();drawSteps();status(L('Solution loaded. Press Next move to step through.'));document.getElementById('algIn').value=full;document.getElementById('playground').scrollIntoView();};
+  document.getElementById('solWatch').onclick=()=>{document.getElementById('solveDlg').close();pg=solved();applyAlg(pg,toks.join(' '));queue=parse(full);qi=0;drawPg();drawSteps();status(L('Solution loaded. Press Next move to step through.'));document.getElementById('algIn').value=full;go('playground');};
   document.getElementById('solCopy').onclick=e=>{try{navigator.clipboard.writeText('z2 '+full);e.target.textContent=L('Copied');}catch(err){}};
+}
+/* Easy way: solve a last-layer case with only the 2-look (beginner) algorithms */
+function cornersPermuted(s){for(const a of AUFS){const t=cloneS(s);if(a)applyAlg(t,a);if(okBy(t,st=>st.p[1]===1&&nz(st.p)===3))return true;}return false;}
+function easyLL(s,upto){
+  const stages=[[edgesOriented,OLLE],[topDone,OLLC]];
+  if(upto!=='oll')stages.push([cornersPermuted,PLLC],[t=>postAUF(t)!==null,PLLE]);
+  const steps=[];let cur=cloneS(s);const keep=[];
+  for(const [cond,list] of stages){
+    if(!cond(cur)){let f=null;
+      outer:for(const pre of AUFS)for(const it of list){const t=cloneS(cur);applyAlg(t,joinM(pre,it.alg));if(cond(t)&&f2lDone(t)&&keep.every(k=>k(t))){f={name:it.name,pre,alg:it.alg,t};break outer;}}
+      if(!f)return null;steps.push(f);cur=f.t;}
+    keep.push(cond);}
+  if(upto!=='oll'){const a=postAUF(cur);if(a)steps.push({name:'AUF',pre:'',alg:a});}
+  return steps;
+}
+function toggleEasy(d,item){
+  let box=d.querySelector('.easy');if(box){box.remove();return;}
+  const st=easyLL(caseOf(item.alg),item.easy);
+  box=document.createElement('div');box.className='easy';
+  if(!st){box.textContent=L('No easy way found.');d.appendChild(box);return;}
+  const n=st.reduce((a,x)=>a+htm(joinM(x.pre,x.alg)),0);
+  box.innerHTML=`<div class="easy-h">${Lt('easyHead',st.length,n,htm(item.alg))}</div><ol>${st.map(x=>`<li><b>${x.pre?'<code>'+x.pre+'</code> + ':''}${L(x.name)}</b><div class="mem">${memo(x.alg).html}</div></li>`).join('')}</ol>`;
+  d.appendChild(box);
+}
+/* 3D player inside the solver window */
+let solCube=null,solTimer=0;
+function solPlayer(toks,flat,steps){
+  const view=document.getElementById('solView'),now=document.getElementById('solNow'),out=document.getElementById('solveOut');
+  if(!window.THREE||!window.Cube3D){view.hidden=true;return;}
+  view.hidden=false;
+  if(!solCube){try{solCube=new Cube3D(document.getElementById('solCube'),{speed:300,touch:'none'});}catch(e){view.hidden=true;return;}}
+  const mv=flat.map(f=>parse(f.t)[0]);
+  let pos=0,model=null,playing=false;
+  const base=()=>{const m=solved();applyAlg(m,toks.join(' '));return m;};
+  const paint=()=>{
+    out.querySelectorAll('.sol-steps span[data-i]').forEach(sp=>{const i=+sp.dataset.i;sp.className=i<pos?'done':i===pos?'next':'';});
+    const si=pos<flat.length?flat[pos].si:steps.length;
+    out.querySelectorAll('.sol-steps li[data-step]').forEach(li=>li.classList.toggle('cur',+li.dataset.step===si));
+    now.innerHTML=pos>=flat.length?`<b>${L('Solved!')}</b> ${Lt('moves',flat.length)}`:`<span>${steps[flat[pos].si].label}</span> · ${L('Move')} ${pos+1}/${flat.length}: <code>${flat[pos].t}</code>`;
+    document.getElementById('solPlay').textContent=playing?'❚❚ '+L('Pause'):'▶ '+L('Play');};
+  const jump=p=>{clearInterval(solTimer);playing=false;solCube.clear();model=base();for(let i=0;i<p;i++)applyMove(model,mv[i]);pos=p;solCube.model=model;solCube.sync(model);paint();};
+  const fwd=()=>{if(pos>=flat.length)return false;applyMove(model,mv[pos]);solCube.model=model;solCube.enqueue(mv[pos]);pos++;paint();return true;};
+  const back=()=>{if(pos<=0)return;pos--;const inv=invert([mv[pos]])[0];applyMove(model,inv);solCube.model=model;solCube.enqueue(inv);paint();};
+  const play=()=>{if(playing){clearInterval(solTimer);playing=false;paint();return;}if(pos>=flat.length)jump(0);playing=true;paint();
+    solTimer=setInterval(()=>{if(solCube.busy)return;if(!fwd()){clearInterval(solTimer);playing=false;paint();}},40);};
+  const stepFwd=()=>{if(pos>=flat.length)return;clearInterval(solTimer);playing=false;const si=flat[pos].si;
+    const go1=()=>{if(pos<flat.length&&flat[pos].si===si){if(!solCube.busy)fwd();solTimer=setTimeout(go1,40);}else paint();};go1();};
+  document.getElementById('solPlay').onclick=play;
+  document.getElementById('solNext').onclick=()=>{clearInterval(solTimer);playing=false;fwd();};
+  document.getElementById('solPrev').onclick=()=>{clearInterval(solTimer);playing=false;back();};
+  document.getElementById('solStep').onclick=stepFwd;
+  document.getElementById('solReset').onclick=()=>jump(0);
+  document.getElementById('solSpeed').onchange=e=>{solCube.speed=+e.target.value;};solCube.speed=+document.getElementById('solSpeed').value;
+  out.querySelectorAll('.sol-steps li[data-step]').forEach(li=>{li.onclick=()=>{const p=flat.findIndex(f=>f.si===+li.dataset.step);jump(p<0?flat.length:p);};});
+  jump(0);
 }
 function initSolver(){
   const dlg=document.getElementById('solveDlg');if(!dlg)return;
   const inp=document.getElementById('solveIn');
-  const open=()=>{inp.value=document.getElementById('scr').textContent;document.getElementById('solveOut').replaceChildren();if(dlg.showModal)dlg.showModal();else dlg.setAttribute('open','');solveScramble(inp.value);};
+  const open=()=>{inp.value=document.getElementById('scr').textContent;document.getElementById('solveOut').replaceChildren();document.getElementById('solView').hidden=true;if(dlg.showModal)dlg.showModal();else dlg.setAttribute('open','');solveScramble(inp.value);};
   document.querySelectorAll('[data-solve]').forEach(b=>b.onclick=e=>{e.preventDefault();open();});
   document.getElementById('solveGo').onclick=()=>solveScramble(inp.value);
   document.getElementById('solveRand').onclick=()=>{inp.value=makeScramble();solveScramble(inp.value);};
   inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();solveScramble(inp.value);}};
   dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.close();});
+  dlg.addEventListener('close',()=>{clearInterval(solTimer);clearTimeout(solTimer);if(solCube)solCube.clear();});
+  document.getElementById('solveRand').addEventListener('click',()=>{document.getElementById('solView').hidden=true;});
+  document.getElementById('solveGo').addEventListener('click',()=>{document.getElementById('solView').hidden=true;});
 }
 
-function initSpy(){
-  const links=[...document.querySelectorAll('nav.bar a[href^="#"]')].filter(a=>document.getElementById(a.getAttribute('href').slice(1)));
-  if(!('IntersectionObserver' in window))return;
-  const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){links.forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+e.target.id));const on=links.find(a=>a.classList.contains('on'));if(on&&on.scrollIntoView&&matchMedia('(min-width:1px)').matches){const bar=on.parentElement;bar.scrollTo({left:on.offsetLeft-bar.clientWidth/2+on.clientWidth/2,behavior:'smooth'});}}});},{rootMargin:'-45% 0px -50% 0px'});
-  links.forEach(a=>io.observe(document.getElementById(a.getAttribute('href').slice(1))));
+/* ---------- pages: landing + one topic at a time ---------- */
+const PAGES=[...document.querySelectorAll('section.chap')].map(x=>x.id);
+function go(id){if(location.hash!=='#'+id)location.hash=id;else route();}
+function route(){
+  const id=location.hash.slice(1),hero=document.querySelector('header.hero'),home=document.getElementById('home');
+  const page=PAGES.includes(id)?id:null;
+  document.body.classList.toggle('on-page',!!page);
+  hero.hidden=!!page;home.hidden=!!page;
+  PAGES.forEach(p=>{document.getElementById(p).hidden=p!==page;});
+  document.querySelectorAll('nav.bar a[href^="#"]').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+page));
+  const on=document.querySelector('nav.bar a.on');if(on){const bar=on.parentElement;bar.scrollTo({left:on.offsetLeft-bar.clientWidth/2+on.clientWidth/2});}
+  window.scrollTo(0,0);
+  document.title=(page?(document.querySelector('nav.bar a[href="#'+page+'"]')||{}).textContent+' · ':'')+(LANG==='lo'?'ຄູ່ມື CFOP 3x3':'CFOP 3x3 Guide');
+}
+function initPages(){
+  const label=id=>{const a=document.querySelector('nav.bar a[href="#'+id+'"]');return a?a.textContent.trim():id;};
+  PAGES.forEach((id,i)=>{const sec=document.getElementById(id),w=sec.querySelector('.wrap');
+    w.insertAdjacentHTML('afterbegin',`<a class="back" href="#">← ${L('All topics')}</a>`);
+    const prev=PAGES[i-1],next=PAGES[i+1];
+    w.insertAdjacentHTML('beforeend',`<div class="pager">${prev?`<a href="#${prev}"><small>${L('Previous')}</small><b>← ${label(prev)}</b></a>`:'<span></span>'}${next?`<a class="nx" href="#${next}"><small>${L('Next')}</small><b>${label(next)} →</b></a>`:''}</div>`);});
+  document.querySelectorAll('.stage[data-go]').forEach(st=>{st.tabIndex=0;st.onclick=()=>go(st.dataset.go);st.onkeydown=e=>{if(e.key==='Enter')go(st.dataset.go);};});
+  addEventListener('hashchange',route);route();
 }
 /* ---------- boot ---------- */
 applyStatic();
@@ -588,6 +684,6 @@ renderLL(OLLC,'ollcCards','oll','ollc');
 renderLL(PLLC,'pllcCards','pllc','pllc','corners');
 renderLL(PLLE,'plleCards','pll','plle','all');
 initHero();
-renderFull();renderCOLL();initZB();initAF2L();initSolver();initSpy();
+renderFull();renderCOLL();initZB();initAF2L();initSolver();initPages();
 initPg();initTimer();initDrills();initFT();initQuiz();updateProgress();
 

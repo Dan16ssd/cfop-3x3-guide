@@ -358,3 +358,60 @@ footer{border-top:1px solid rgba(255,255,255,.07)}
   .cta a,.cta button{flex:1 1 auto;justify-content:center}
 }
 .dlg .eyebrow{padding-right:48px}
+
+/* landing + pages */
+[hidden]{display:none!important}
+nav.bar .brand{font-family:var(--display);font-weight:900;color:#fff;margin-right:6px}
+header.hero{padding-block:40px 8px}
+#home{padding-block:8px 48px}
+.home-h{font-size:clamp(1.3rem,2.6vw,1.7rem);margin:18px 0 4px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:10px}
+.tile{display:grid;gap:4px;padding:16px;border-radius:var(--r);text-decoration:none;color:var(--fg);min-height:88px;align-content:start;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--c) 20%,transparent),rgba(15,22,48,.92) 65%);border:1px solid color-mix(in srgb,var(--c) 40%,transparent);border-top:3px solid var(--c);transition:transform .15s,box-shadow .15s}
+.tile:hover,.tile:focus-visible{transform:translateY(-2px);box-shadow:0 0 24px color-mix(in srgb,var(--c) 35%,transparent)}
+.tile b{font-family:var(--display);font-size:1.08rem}
+.tile span{font-size:.82rem;color:var(--muted);line-height:1.35}
+.stage[data-go]{cursor:pointer;transition:transform .15s}
+.stage[data-go]:hover{transform:translateY(-2px)}
+.on-page section.chap{border-top:0;padding-top:20px;min-height:70vh}
+.back{display:inline-block;margin-bottom:14px;font-size:.88rem;font-weight:600;text-decoration:none;color:#aeb9e6;padding:6px 12px;border-radius:999px;border:1px solid var(--line)}
+.back:hover{background:rgba(255,255,255,.06)}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:36px}
+.pager a{display:grid;gap:2px;padding:12px 16px;border-radius:12px;text-decoration:none;color:var(--fg);border:1px solid var(--line);background:rgba(255,255,255,.03);min-width:0}
+.pager a:hover{border-color:#5b7cff}
+.pager a.nx{text-align:right;margin-left:auto}
+.pager small{color:var(--muted);font-size:.75rem}
+@media (max-width:520px){.tiles{grid-template-columns:1fr 1fr;gap:8px}.tile{padding:12px;min-height:80px}.tile b{font-size:.98rem}.pager b{font-size:.85rem}}
+
+.tiles{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+/* solver 3D player */
+.sol-view{display:grid;grid-template-columns:260px 1fr;gap:16px;align-items:center;margin-top:16px;padding:12px;border-radius:16px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.07)}
+.sol-view .cube3d{width:260px}
+.sol-ctl{display:grid;gap:10px;min-width:0}
+.sol-now{font-size:.9rem;min-height:2.6em}
+.sol-now span{font-weight:700;color:var(--yellow)}
+.sol-now code{background:var(--accent);color:#fff;padding:1px 8px;border-radius:6px}
+.sol-btns{display:flex;gap:6px;flex-wrap:wrap}
+.sol-btns button{min-width:44px;min-height:40px;font-family:var(--mono)}
+.sol-sp{display:flex;gap:8px;align-items:center;font-size:.82rem}
+.sol-tip{font-size:.75rem}
+.sol-steps li{cursor:pointer}
+.sol-steps li.cur{background:rgba(77,124,255,.16);box-shadow:inset 0 0 0 1px rgba(120,140,255,.5)}
+.sol-steps code span{border-radius:4px;padding:0 2px;transition:background .15s}
+.sol-steps code span.done{opacity:.4}
+.sol-steps code span.next{background:var(--accent);color:#fff}
+@media (max-width:620px){.sol-view{grid-template-columns:1fr;justify-items:center}.sol-view .cube3d{width:min(240px,70vw)}.sol-ctl{width:100%}}
+
+/* triggers / easy way */
+.mem{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:.74rem}
+.mem-h{font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#7ee2a8;background:rgba(47,210,122,.14);padding:1px 7px;border-radius:99px;margin-right:2px}
+.mem em{font-style:normal;color:var(--muted);opacity:.6}
+.mem code{font-size:.74rem;color:#c9d2f2}
+.trg{display:inline-grid;line-height:1.15;padding:2px 7px;border-radius:7px;background:rgba(255,154,77,.14);border:1px solid rgba(255,154,77,.35)}
+.trg b{font-size:.7rem;color:#ffb27a}
+.trg i{font-style:normal;font-family:var(--mono);font-size:.62rem;color:var(--muted)}
+.easy-b{border-color:rgba(47,210,122,.5)!important;color:#7ee2a8}
+.easy{border-top:1px dashed var(--line);padding-top:10px;display:grid;gap:8px;font-size:.82rem}
+.easy-h{color:#7ee2a8;font-weight:600}
+.easy ol{margin:0;padding-left:18px;display:grid;gap:8px}
+.easy li b{font-size:.82rem}

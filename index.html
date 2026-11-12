@@ -8,12 +8,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+Lao:wght@400;500;700&display=swap">
-<link rel="stylesheet" href="css/style.css?v=202611131800">
+<link rel="stylesheet" href="css/style.css?v=202611132230">
 </head>
 <body>
 
 
 <nav class="bar"><div class="wrap">
+  <a href="#" class="brand">◧ CFOP 3x3</a>
   <a href="#notation">Notation</a>
   <a href="#playground">3D Playground</a>
   <a href="#cross"><span class="dot" style="background:var(--s-cross)"></span>Cross</a>
@@ -40,24 +41,56 @@
     <h1>Solve the cube in <span>four stages</span>.</h1>
     <div class="prose">
       <p>CFOP is the method most world-class solvers use. You build a white cross, pair up and insert the first two layers, then finish the yellow layer with memorized algorithms. This guide starts with the 2-look last layer (10 OLL and 6 PLL algorithms), then goes on to COLL and ZBLL for sub-10 and sub-8 solving.</p>
-      <p class="muted">Hold the cube with white on the bottom and green in front. Every diagram on this page uses that orientation.</p>
     </div>
     <div class="cta"><a class="btn-y" href="#notation">▶ Start learning</a><a class="btn-o" href="#timer">⏱ Open timer</a><button class="btn-o" type="button" data-solve>✦ CFOP solver</button></div>
     <div class="stages">
-      <div class="stage" style="--c:var(--s-cross)"><b>Cross</b><small>White edges around the bottom center</small><span class="n">~8 moves</span></div>
-      <div class="stage" style="--c:var(--s-f2l)"><b>F2L</b><small>4 corner-edge pairs into slots</small><span class="n">~28 moves</span><div class="bar"><i data-stage="f2l"></i></div><span class="pc" data-stage-pc="f2l"></span></div>
-      <div class="stage" style="--c:var(--s-oll)"><b>OLL</b><small>Make the top face all yellow</small><span class="n">2-look: 10 algs</span><div class="bar"><i data-stage="oll"></i></div><span class="pc" data-stage-pc="oll"></span></div>
-      <div class="stage" style="--c:var(--s-pll)"><b>PLL</b><small>Move top pieces to their places</small><span class="n">2-look: 6 algs</span><div class="bar"><i data-stage="pll"></i></div><span class="pc" data-stage-pc="pll"></span></div>
+      <div class="stage" data-go="cross" role="link" style="--c:var(--s-cross)"><b>Cross</b><small>White edges around the bottom center</small><span class="n">~8 moves</span></div>
+      <div class="stage" data-go="f2l" role="link" style="--c:var(--s-f2l)"><b>F2L</b><small>4 corner-edge pairs into slots</small><span class="n">~28 moves</span><div class="bar"><i data-stage="f2l"></i></div><span class="pc" data-stage-pc="f2l"></span></div>
+      <div class="stage" data-go="oll" role="link" style="--c:var(--s-oll)"><b>OLL</b><small>Make the top face all yellow</small><span class="n">2-look: 10 algs</span><div class="bar"><i data-stage="oll"></i></div><span class="pc" data-stage-pc="oll"></span></div>
+      <div class="stage" data-go="pll" role="link" style="--c:var(--s-pll)"><b>PLL</b><small>Move top pieces to their places</small><span class="n">2-look: 6 algs</span><div class="bar"><i data-stage="pll"></i></div><span class="pc" data-stage-pc="pll"></span></div>
     </div>
     <div class="progress"><span id="progText">0 cases learned</span><div class="track"><div class="fill" id="progFill"></div></div></div>
   </div>
   <div class="hero-cube" id="heroCube"></div>
 </div></header>
 
+<section id="home"><div class="wrap">
+  <h2 class="home-h">Choose what you want to do</h2>
+  <div class="group-title">Learn CFOP</div>
+  <div class="tiles">
+    <a class="tile" href="#notation" style="--c:#9ba6c7"><b>Notation</b><span>What R, U', M2, x mean</span></a>
+    <a class="tile" href="#cross" style="--c:var(--s-cross)"><b>Cross</b><span>Step 1 · plan it in inspection</span></a>
+    <a class="tile" href="#f2l" style="--c:var(--s-f2l)"><b>F2L</b><span>Step 2 · 12 intuitive cases</span></a>
+    <a class="tile" href="#af2l" style="--c:var(--s-f2l)"><b>Advanced F2L</b><span>41 cases × 4 slots, X-cross</span></a>
+    <a class="tile" href="#oll" style="--c:var(--s-oll)"><b>OLL</b><span>Step 3 · 2-look, 10 algs</span></a>
+    <a class="tile" href="#pll" style="--c:var(--s-pll)"><b>PLL</b><span>Step 4 · 2-look, 6 algs</span></a>
+  </div>
+  <div class="group-title">Algorithm sets</div>
+  <div class="tiles">
+    <a class="tile" href="#fulloll" style="--c:var(--s-oll)"><b>Full OLL</b><span>57 algorithms</span></a>
+    <a class="tile" href="#fullpll" style="--c:var(--s-pll)"><b>Full PLL</b><span>21 algorithms, 3D view</span></a>
+    <a class="tile" href="#coll" style="--c:#8b5cf6"><b>COLL</b><span>42 cases · sub-10</span></a>
+    <a class="tile" href="#zbll" style="--c:#8b5cf6"><b>ZBLL</b><span>493 cases · sub-8</span></a>
+  </div>
+  <div class="group-title">Practice</div>
+  <div class="tiles">
+    <a class="tile" href="#timer" style="--c:var(--yellow)"><b>Timer</b><span>Scrambles, ao5/ao12, your rank</span></a>
+    <a class="tile" href="#solver" data-solve style="--c:var(--yellow)"><b>CFOP solver</b><span>Fastest solution for any scramble</span></a>
+    <a class="tile" href="#playground" style="--c:var(--s-cross)"><b>3D Playground</b><span>Turn a 3D cube, try any alg</span></a>
+    <a class="tile" href="#fingertricks" style="--c:#ff9a4d"><b>Finger tricks</b><span>Animated 3D hands</span></a>
+    <a class="tile" href="#drills" style="--c:#ff9a4d"><b>Drills</b><span>Sexy move, sledge… with timer</span></a>
+  </div>
+  <div class="group-title">Plan your training</div>
+  <div class="tiles">
+    <a class="tile" href="#yiheng" style="--c:var(--s-f2l)"><b>Yiheng Wang training</b><span>Daily routine and weekly plan</span></a>
+    <a class="tile" href="#roadmap" style="--c:var(--s-f2l)"><b>Roadmap</b><span>From sub-2:00 to sub-8</span></a>
+  </div>
+</div></section>
+
 <main>
 <section class="chap" id="notation"><div class="wrap">
   <div class="chap-head"><h2>Notation</h2></div>
-  <div class="prose"><p>Each letter is a face. A plain letter turns that face 90° clockwise, as if you were looking straight at that face. An apostrophe (prime) means counter-clockwise. A 2 means a half turn.</p></div>
+  <div class="prose"><p class="muted">Hold the cube with white on the bottom and green in front. Every diagram on this page uses that orientation.</p><p>Each letter is a face. A plain letter turns that face 90° clockwise, as if you were looking straight at that face. An apostrophe (prime) means counter-clockwise. A 2 means a half turn.</p></div>
   <div class="tbl"><table>
     <thead><tr><th>Move</th><th>Layer</th><th>What it means</th></tr></thead>
     <tbody>
@@ -328,6 +361,15 @@
   <h2 id="solveTitle">CFOP solver</h2>
   <p class="muted">Paste a scramble (white on top, green in front, the WCA way). The solver tries a cross, an X-cross and an XX-cross start, solves the pairs with the shortest advanced F2L it can find, then finishes with ZBLL or OLL + PLL. It shows the fastest one.</p>
   <div class="algline"><input id="solveIn" aria-label="Scramble" spellcheck="false" autocomplete="off"><button class="primary" id="solveGo" type="button">Solve</button><button id="solveRand" type="button">Random</button></div>
+  <div class="sol-view" id="solView" hidden>
+    <div class="cube3d" id="solCube"></div>
+    <div class="sol-ctl">
+      <div class="sol-now" id="solNow" aria-live="polite"></div>
+      <div class="sol-btns"><button id="solReset" type="button" aria-label="Restart">⟲</button><button id="solPrev" type="button" aria-label="Previous move">◀</button><button class="primary" id="solPlay" type="button">▶ Play</button><button id="solNext" type="button" aria-label="Next move">▶|</button><button id="solStep" type="button">Next step ⏭</button></div>
+      <label class="muted sol-sp">Speed <select id="solSpeed"><option value="600">Slow</option><option value="300" selected>Normal</option><option value="140">Fast</option></select></label>
+      <p class="muted sol-tip">Tap a step in the list to jump to it. Drag the cube to look around.</p>
+    </div>
+  </div>
   <div id="solveOut" aria-live="polite"></div>
 </dialog>
 
@@ -339,12 +381,12 @@
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/zbll-data.js?v=202611131800"></script>
-<script src="js/f2l-data.js?v=202611131800"></script>
-<script src="js/solver.js?v=202611131800"></script>
-<script src="js/cube3d.js?v=202611131800"></script>
-<script src="js/hands3d.js?v=202611131800"></script>
-<script src="js/i18n.js?v=202611131800"></script>
-<script src="js/app.js?v=202611131800"></script>
+<script src="js/zbll-data.js?v=202611132230"></script>
+<script src="js/f2l-data.js?v=202611132230"></script>
+<script src="js/solver.js?v=202611132230"></script>
+<script src="js/cube3d.js?v=202611132230"></script>
+<script src="js/hands3d.js?v=202611132230"></script>
+<script src="js/i18n.js?v=202611132230"></script>
+<script src="js/app.js?v=202611132230"></script>
 </body>
 </html>
