@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+Lao:wght@400;500;700&display=swap">
-<link rel="stylesheet" href="css/style.css?v=202611131410">
+<link rel="stylesheet" href="css/style.css?v=202611131800">
 </head>
 <body>
 
@@ -18,6 +18,7 @@
   <a href="#playground">3D Playground</a>
   <a href="#cross"><span class="dot" style="background:var(--s-cross)"></span>Cross</a>
   <a href="#f2l"><span class="dot" style="background:var(--s-f2l)"></span>F2L</a>
+  <a href="#af2l">Advanced F2L</a>
   <a href="#oll"><span class="dot" style="background:var(--s-oll)"></span>OLL</a>
   <a href="#pll"><span class="dot" style="background:var(--s-pll)"></span>PLL</a>
   <a href="#fulloll">Full OLL</a>
@@ -28,6 +29,7 @@
   <a href="#drills">Drills</a>
   <a href="#yiheng">Yiheng Wang training</a>
   <a href="#timer">Timer</a>
+  <a href="#solver" data-solve>Solver</a>
   <a href="#roadmap">Roadmap</a>
   <button class="lang" id="langBtn" type="button" aria-label="Switch language / ປ່ຽນພາສາ"><span data-l="en">EN</span><span data-l="lo">ລາວ</span></button>
 </div></nav>
@@ -40,11 +42,12 @@
       <p>CFOP is the method most world-class solvers use. You build a white cross, pair up and insert the first two layers, then finish the yellow layer with memorized algorithms. This guide starts with the 2-look last layer (10 OLL and 6 PLL algorithms), then goes on to COLL and ZBLL for sub-10 and sub-8 solving.</p>
       <p class="muted">Hold the cube with white on the bottom and green in front. Every diagram on this page uses that orientation.</p>
     </div>
+    <div class="cta"><a class="btn-y" href="#notation">▶ Start learning</a><a class="btn-o" href="#timer">⏱ Open timer</a><button class="btn-o" type="button" data-solve>✦ CFOP solver</button></div>
     <div class="stages">
       <div class="stage" style="--c:var(--s-cross)"><b>Cross</b><small>White edges around the bottom center</small><span class="n">~8 moves</span></div>
-      <div class="stage" style="--c:var(--s-f2l)"><b>F2L</b><small>4 corner-edge pairs into slots</small><span class="n">~28 moves</span></div>
-      <div class="stage" style="--c:var(--s-oll)"><b>OLL</b><small>Make the top face all yellow</small><span class="n">2-look: 10 algs</span></div>
-      <div class="stage" style="--c:var(--s-pll)"><b>PLL</b><small>Move top pieces to their places</small><span class="n">2-look: 6 algs</span></div>
+      <div class="stage" style="--c:var(--s-f2l)"><b>F2L</b><small>4 corner-edge pairs into slots</small><span class="n">~28 moves</span><div class="bar"><i data-stage="f2l"></i></div><span class="pc" data-stage-pc="f2l"></span></div>
+      <div class="stage" style="--c:var(--s-oll)"><b>OLL</b><small>Make the top face all yellow</small><span class="n">2-look: 10 algs</span><div class="bar"><i data-stage="oll"></i></div><span class="pc" data-stage-pc="oll"></span></div>
+      <div class="stage" style="--c:var(--s-pll)"><b>PLL</b><small>Move top pieces to their places</small><span class="n">2-look: 6 algs</span><div class="bar"><i data-stage="pll"></i></div><span class="pc" data-stage-pc="pll"></span></div>
     </div>
     <div class="progress"><span id="progText">0 cases learned</span><div class="track"><div class="fill" id="progFill"></div></div></div>
   </div>
@@ -108,6 +111,24 @@
     <p class="muted">All cases below target the front-right slot (green and orange). Colored pieces are the pair and the cross; gray pieces don't matter. Front-left slot? Mirror the moves with <code>L</code> and <code>F</code>, or use <code>U' F' U F</code> style inserts to avoid rotating the cube.</p>
   </div>
   <div id="f2lCards"></div>
+</div></section>
+
+<section class="chap" id="af2l"><div class="wrap">
+  <div class="chap-head"><span class="tag" style="background:var(--s-f2l)">Advanced</span><h2>Advanced F2L</h2></div>
+  <div class="prose">
+    <p>Advanced F2L is what separates a 15-second solver from a sub-10 one. It has two parts: knowing a short, rotation-free algorithm for every F2L case in every slot, and the techniques below that save moves and pauses between pairs.</p>
+  </div>
+  <div class="cols">
+    <div class="note"><h3>X-cross and XX-cross</h3><p>Solve the cross and the first pair (X-cross) or two pairs (XX-cross) together, planned in the 15-second inspection. A good X-cross saves 5–8 moves. The solver below always tries cross, X-cross and XX-cross and keeps the shortest.</p></div>
+    <div class="note"><h3>Keyhole</h3><p>When a slot is still empty, use it as a free spot: drop a corner or edge in through the empty slot without breaking anything. Great for corners stuck in the bottom layer.</p></div>
+    <div class="note"><h3>Multi-slotting</h3><p>While inserting one pair, set up the next: choose the insert (for example <code>R U R'</code> vs <code>R U' R'</code>) that also pairs or frees the next pieces.</p></div>
+    <div class="note"><h3>Pseudo-slotting</h3><p>Insert a pair into the wrong slot on purpose with the D layer turned, then fix the D layer later. Common in X-cross planning.</p></div>
+    <div class="note"><h3>Back slots without rotations</h3><p>Insert back pairs with <code>R' U R</code>, <code>L U' L'</code> or <code>B</code> moves instead of <code>y</code> rotations. Every case below has an algorithm for each slot.</p></div>
+    <div class="note"><h3>Edge control on the last pair</h3><p>Insert the last pair so all four yellow edges end up oriented (ZBLS / VHLS). Then the last layer is one ZBLL or a COLL plus edge PLL.</p></div>
+  </div>
+  <div class="group-title">All 41 F2L cases · every slot</div>
+  <div class="zb-tabs" id="afTabs" role="tablist"></div>
+  <div id="afCards"></div>
 </div></section>
 
 <section class="chap" id="oll"><div class="wrap">
@@ -276,7 +297,7 @@
   <div class="prose"><p>Hold <b>Space</b> (or press and hold the clock on a phone) until it turns green, release to start, press any key or tap to stop. Scrambles are random 20-move sequences: scramble with white on top and green in front, the WCA way.</p></div>
   <div class="timer">
     <div class="scr" id="scr"></div>
-    <div class="algline" style="justify-content:center"><button class="sm" id="newScr">New scramble</button><button class="sm" id="scrToPg">Show in playground</button></div>
+    <div class="algline" style="justify-content:center"><button class="sm" id="newScr">New scramble</button><button class="sm" id="scrToPg">Show in playground</button><button class="sm primary" id="solveScr" data-solve>Solve it (CFOP)</button></div>
     <div class="clock" id="clock" tabindex="0" role="button" aria-label="Timer">0.00</div>
     <div class="stats"><span>Best <b id="stBest">–</b></span><span>ao5 <b id="stAo5">–</b></span><span>ao12 <b id="stAo12">–</b></span><span>Solves <b id="stN">0</b></span></div>
     <div class="rank" id="rank" hidden aria-live="polite"></div>
@@ -301,6 +322,15 @@
 </div></section>
 </main>
 
+<dialog class="dlg" id="solveDlg" aria-labelledby="solveTitle">
+  <form method="dialog" class="dlg-x"><button aria-label="Close">✕</button></form>
+  <div class="eyebrow">Cross · X-cross · XX-cross · advanced F2L · ZBLL / OLL + PLL</div>
+  <h2 id="solveTitle">CFOP solver</h2>
+  <p class="muted">Paste a scramble (white on top, green in front, the WCA way). The solver tries a cross, an X-cross and an XX-cross start, solves the pairs with the shortest advanced F2L it can find, then finishes with ZBLL or OLL + PLL. It shows the fastest one.</p>
+  <div class="algline"><input id="solveIn" aria-label="Scramble" spellcheck="false" autocomplete="off"><button class="primary" id="solveGo" type="button">Solve</button><button id="solveRand" type="button">Random</button></div>
+  <div id="solveOut" aria-live="polite"></div>
+</dialog>
+
 <footer><div class="wrap foot">
   <p class="credit">Created by <b>Sinthanavanh Sinsamphanh</b></p>
   <p>CFOP 3x3 Guide · All diagrams are generated by a cube simulator from the listed algorithms. Color scheme: white bottom, yellow top, green front, orange right.</p>
@@ -309,10 +339,12 @@
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/zbll-data.js?v=202611131410"></script>
-<script src="js/cube3d.js?v=202611131410"></script>
-<script src="js/hands3d.js?v=202611131410"></script>
-<script src="js/i18n.js?v=202611131410"></script>
-<script src="js/app.js?v=202611131410"></script>
+<script src="js/zbll-data.js?v=202611131800"></script>
+<script src="js/f2l-data.js?v=202611131800"></script>
+<script src="js/solver.js?v=202611131800"></script>
+<script src="js/cube3d.js?v=202611131800"></script>
+<script src="js/hands3d.js?v=202611131800"></script>
+<script src="js/i18n.js?v=202611131800"></script>
+<script src="js/app.js?v=202611131800"></script>
 </body>
 </html>

@@ -126,15 +126,20 @@ const allIds=new Set();
 let learned=new Set();
 try{learned=new Set(JSON.parse(localStorage.getItem('cfop-learned')||'[]'));}catch(e){}
 function saveLearned(){try{localStorage.setItem('cfop-learned',JSON.stringify([...learned]));}catch(e){}updateProgress();}
-function updateProgress(){const all=allIds.size||1;const n=[...learned].filter(id=>allIds.has(id)).length;document.getElementById('progText').textContent=Lt('learnedOf',n,all);document.getElementById('progFill').style.width=(n/all*100)+'%';}
+function updateProgress(){const all=allIds.size||1;const n=[...learned].filter(id=>allIds.has(id)).length;document.getElementById('progText').textContent=Lt('learnedOf',n,all);document.getElementById('progFill').style.width=(n/all*100)+'%';
+  const ST={cross:/^f2l\d/,f2l:/^(f2l\d|af-)/,oll:/^(olle|ollc|foll)/,pll:/^(pllc|plle|fpll)/};
+  for(const k in ST){const ids=[...allIds].filter(i=>ST[k].test(i));const done=ids.filter(i=>learned.has(i)).length;const pct=ids.length?Math.round(done/ids.length*100):0;
+    const bar=document.querySelector('[data-stage="'+k+'"]'),pc=document.querySelector('[data-stage-pc="'+k+'"]');if(bar)bar.style.width=pct+'%';if(pc)pc.textContent=pct+'% · '+done+'/'+ids.length;}}
 
 const posName=p=>({'1,1,0':'top-right','0,1,1':'top-front','-1,1,0':'top-left','0,1,-1':'top-back'})[p.join(',')]||'in the slot';
 const dirName={U:'up',F:'front',R:'right',L:'left',B:'back',D:'down'};
 
+function moveText(m){return m.face+(m.k===2?'2':m.k===-1?"'":'');}
+function scrambleOf(alg){try{return invert(parse(alg)).map(moveText).join(' ');}catch(e){return '';}}
 function card(item,diagram,id){
   allIds.add(id);const d=document.createElement('div');d.className='card'+(learned.has(id)?' learned':'');
   const dia=document.createElement('div');dia.className='dia';dia.appendChild(diagram);d.appendChild(dia);
-  d.insertAdjacentHTML('beforeend',`<div class="nm"><b>${L(item.name)}</b>${item.sub?`<span>${String(item.sub).replace(/^(\d+) moves$/,(m,n)=>Lt('moves',n))}</span>`:''}</div><div class="alg">${item.alg}</div>${item.tip?`<div class="hint">${L(item.tip)}</div>`:''}`);
+  d.insertAdjacentHTML('beforeend',`<div class="nm"><b>${L(item.name)}</b>${item.sub?`<span>${String(item.sub).replace(/^(\d+) moves$/,(m,n)=>Lt('moves',n))}</span>`:''}</div><div class="alg">${item.alg}</div><div class="scr-line"><span>${L('Scramble')}</span><code>${scrambleOf(item.alg)}</code></div>${item.tip?`<div class="hint">${L(item.tip)}</div>`:''}`);
   const row=document.createElement('div');row.className='row';
   row.innerHTML=`<label class="chk"><input type="checkbox" id="lr-${id}" ${learned.has(id)?'checked':''}> ${L('Learned')}</label>`;
   const b=document.createElement('button');b.className='sm';b.textContent=L('Try it');b.onclick=()=>loadCase(item.alg,L(item.name));row.appendChild(b);
@@ -465,6 +470,116 @@ function initHero(){
   setTimeout(run,900);
 }
 
+/* ---------- advanced F2L ---------- */
+const AF2L_GROUPS=['Both pieces in the top layer','Corner on top, edge in the slot','Corner in the slot, edge on top','Both pieces in the slot'];
+const AF2L_SLOTS=[['FR','Front-right','','R U F'],['FL','Front-left',"y'",'L U F'],['BR','Back-right','y','R U B'],['BL','Back-left','y2','L U B']];
+function initAF2L(){
+  if(typeof AF2L==='undefined')return;
+  const tabs=document.getElementById('afTabs'),host=document.getElementById('afCards');
+  Object.keys(AF2L).forEach(sl=>AF2L[sl].forEach((x,i)=>allIds.add('af-'+sl+'-'+i)));
+  let saved='FR';try{saved=localStorage.getItem('cfop-afslot')||'FR';}catch(e){}
+  const show=sl=>{[...tabs.children].forEach(b=>b.setAttribute('aria-selected',b.dataset.set===sl));try{localStorage.setItem('cfop-afslot',sl);}catch(e){}
+    const cfg=AF2L_SLOTS.find(c=>c[0]===sl);const home={FR:[1,1],FL:[-1,1],BR:[1,-1],BL:[-1,-1]}[sl];
+    const mask=st=>{const h=st.h;return nz(h)===1||(h[1]===-1&&nz(h)===2)||eq(h,[home[0],-1,home[1]])||eq(h,[home[0],0,home[1]]);};
+    host.replaceChildren();host.insertAdjacentHTML('beforeend',`<p class="muted af-note">${Lt('afNote',L(cfg[1]),cfg[3])}</p>`);
+    let g=-1,grid,n=0;
+    AF2L[sl].forEach(([grp,alg],i)=>{
+      if(grp!==g){g=grp;host.insertAdjacentHTML('beforeend',`<div class="group-title">${L(AF2L_GROUPS[grp])}</div>`);grid=document.createElement('div');grid.className='cards';host.appendChild(grid);}
+      n++;const st=caseOf(alg);if(cfg[2])applyAlg(st,cfg[2]);
+      grid.appendChild(card({name:sl+' · '+Lt('case',n),sub:alg.split(' ').length+' moves',alg},isoDiagram(st,mask),'af-'+sl+'-'+i));});
+    updateProgress();};
+  AF2L_SLOTS.forEach(([k,label])=>{const b=document.createElement('button');b.dataset.set=k;b.setAttribute('role','tab');b.innerHTML=`${k} <span class="cnt">${L(label)}</span>`;b.onclick=()=>show(k);tabs.appendChild(b);});
+  show(AF2L[saved]?saved:'FR');
+}
+
+/* ---------- CFOP solver (modal) ---------- */
+const cloneS=s=>s.map(st=>({...st,p:st.p.slice(),n:st.n.slice()}));
+function okBy(s,pred){const ctr={};for(const st of s)if(nz(st.p)===1)ctr[st.n.join()]=st.c;return s.every(st=>!pred(st)||st.c===ctr[st.n.join()]);}
+const AUFS=['','U',"U'",'U2'];
+const isSolved=s=>okBy(s,()=>true), f2lDone=s=>okBy(s,st=>st.p[1]<1), topDone=s=>okBy(s,st=>st.n[1]===1);
+const edgesOriented=s=>okBy(s,st=>st.n[1]===1&&nz(st.p)===2);
+function postAUF(s){for(const a of AUFS){const t=cloneS(s);if(a)applyAlg(t,a);if(isSolved(t))return a;}return null;}
+let ZB_NAMES=null;
+function zbNames(){if(ZB_NAMES)return ZB_NAMES;const c={};ZB_NAMES=ZBLL.map(([set,ci])=>{const k=set+'/'+ci;c[k]=(c[k]||0)+1;return (set==='PLL'?'PLL ':'ZBLL '+set+' ')+ci+'.'+c[k];});return ZB_NAMES;}
+const joinM=(a,b)=>[a,b].filter(Boolean).join(' ');
+function solveLL(s){
+  const out={zb:null,op:[]};
+  if(isSolved(s))return out;
+  if(edgesOriented(s)&&typeof ZBLL!=='undefined'){const names=zbNames();
+    outer:for(const pre of AUFS)for(let i=0;i<ZBLL.length;i++){const t=cloneS(s);applyAlg(t,joinM(pre,ZBLL[i][2]));if(!topDone(t)||!f2lDone(t))continue;const post=postAUF(t);if(post!==null){out.zb=[{name:names[i],moves:joinM(joinM(pre,ZBLL[i][2]),post)}];break outer;}}}
+  let t=cloneS(s);
+  if(!topDone(t)){let found=null;
+    outer2:for(const pre of AUFS)for(const n in OLL_ALGS){const u=cloneS(t);applyAlg(u,joinM(pre,OLL_ALGS[n]));if(topDone(u)&&f2lDone(u)){found={name:'OLL '+n,moves:joinM(pre,OLL_ALGS[n])};t=u;break outer2;}}
+    if(!found)return null;out.op.push(found);}
+  if(!isSolved(t)){const a=postAUF(t);if(a!==null)out.op.push({name:'AUF',moves:a});
+    else{let found=null;
+      outer3:for(const pre of AUFS)for(const n in PLL_ALGS){const u=cloneS(t);applyAlg(u,joinM(pre,PLL_ALGS[n]));if(!f2lDone(u)||!topDone(u))continue;const post=postAUF(u);if(post!==null){found={name:n+'-perm',moves:joinM(joinM(pre,PLL_ALGS[n]),post)};break outer3;}}
+      if(!found)return null;out.op.push(found);}}
+  return out;
+}
+const conjZ2=sc=>sc.trim().split(/\s+/).filter(Boolean).map(t=>({U:'D',D:'U',R:'L',L:'R'}[t[0]]||t[0])+t.slice(1));
+let solverWorker=null;
+function runF2L(moves){
+  return new Promise((res,rej)=>{
+    try{if(!solverWorker&&window.Worker&&location.protocol!=='file:')solverWorker=new Worker('js/solver.js?v='+SOLVER_V);}catch(e){solverWorker=null;}
+    if(solverWorker){const id=Math.random();const h=e=>{if(e.data.id!==id)return;solverWorker.removeEventListener('message',h);e.data.error?rej(new Error(e.data.error)):res(e.data.plans);};solverWorker.addEventListener('message',h);solverWorker.postMessage({id,moves});}
+    else setTimeout(()=>{try{res(CFOPSolver.solveF2L(moves));}catch(e){rej(e);}},30);
+  });
+}
+const SOLVER_V='202611131800';
+const htm=str=>str&&str.trim()?str.trim().split(/\s+/).filter(t=>!/^[xyz]/.test(t)).length:0;
+const KIND_NAME={cross:'Cross',xcross:'X-cross',xxcross:'XX-cross'};
+async function solveScramble(sc){
+  const out=document.getElementById('solveOut');
+  let toks;try{toks=conjZ2(sc);if(!toks.length||toks.some(t=>!/^[RLUDFB](2|')?$/.test(t)))throw 0;}catch(e){out.innerHTML=`<p class="status err">${L("Use face moves only: R L U D F B, with ' or 2.")}</p>`;return;}
+  out.innerHTML=`<p class="muted sol-wait">${L('Searching cross, X-cross and XX-cross…')}</p>`;
+  let plans;try{plans=await runF2L(toks);}catch(e){out.innerHTML=`<p class="status err">${e.message}</p>`;return;}
+  const results=[];
+  for(const plan of plans){
+    const s=solved();applyAlg(s,toks.join(' '));
+    const steps=[];let done=0;
+    for(const st of plan){const mv=st.moves.join(' ');if(mv)applyAlg(s,mv);
+      if(st.kind==='pair'){done+=st.slots.length;steps.push({label:Lt('pairN',done,st.slots.join(', '))+(st.ec?' · '+L('edge control'):''),moves:mv});}
+      else{done=(st.slots||[]).length;const k=st.kind==='cross'&&done?(done>1?'xxcross':'xcross'):st.kind;steps.push({label:L(KIND_NAME[k])+(done?' ('+st.slots.join(', ')+')':''),moves:mv});}}
+    if(!f2lDone(s))continue;
+    const ll=solveLL(s);if(!ll)continue;
+    const variants=[ll.op];if(ll.zb)variants.unshift(ll.zb);
+    for(const v of variants){const all=[...steps,...v.map(x=>({label:x.name,moves:x.moves,ll:true}))];
+      const t=solved();applyAlg(t,toks.join(' '));all.forEach(x=>{if(x.moves)applyAlg(t,x.moves);});
+      if(!isSolved(t))continue;
+      results.push({steps:all,n:all.reduce((a,x)=>a+htm(x.moves),0),kind:plan[0].kind,zb:v===ll.zb});}
+  }
+  if(!results.length){out.innerHTML=`<p class="status err">${L('No solution found.')}</p>`;return;}
+  results.sort((a,b)=>a.n-b.n);
+  const best=results[0];
+  const cmp=['cross','xcross','xxcross'].map(k=>{const r=results.filter(x=>x.kind===k)[0];return r?`<span class="${r===best?'on':''}">${L(KIND_NAME[k])} <b>${r.n}</b></span>`:'';}).join('');
+  const noZB=best.zb?results.find(r=>!r.zb):null;
+  out.innerHTML=`<div class="sol-sum"><div><b>${best.n}</b><span>${L('moves')}</span></div><div><b>${(best.n/6).toFixed(1)} s</b><span>${L('at 6 TPS')}</span></div><div><b>${(best.n/10).toFixed(1)} s</b><span>${L('at 10 TPS')}</span></div></div>
+    <p class="sol-cmp">${L('Best total by first step:')} ${cmp}</p>
+    <ol class="sol-steps"><li><span class="lbl">${L('Inspection')}</span><code>z2</code><small>${L('Hold white on the bottom, green in front.')}</small></li>${best.steps.map(x=>`<li${x.ll?' class="ll"':''}><span class="lbl">${x.label}</span><code>${x.moves||'–'}</code><small>${Lt('moves',htm(x.moves))}</small></li>`).join('')}</ol>
+    ${noZB?`<p class="muted sol-alt">${Lt('noZB',noZB.n,noZB.steps.filter(x=>x.ll).map(x=>x.label).join(' + '))}</p>`:''}
+    <div class="algline"><button class="primary" id="solWatch">${L('Watch in 3D')}</button><button id="solCopy">${L('Copy solution')}</button></div>`;
+  const full=best.steps.map(x=>x.moves).filter(Boolean).join(' ');
+  document.getElementById('solWatch').onclick=()=>{document.getElementById('solveDlg').close();pg=solved();applyAlg(pg,toks.join(' '));queue=parse(full);qi=0;drawPg();drawSteps();status(L('Solution loaded. Press Next move to step through.'));document.getElementById('algIn').value=full;document.getElementById('playground').scrollIntoView();};
+  document.getElementById('solCopy').onclick=e=>{try{navigator.clipboard.writeText('z2 '+full);e.target.textContent=L('Copied');}catch(err){}};
+}
+function initSolver(){
+  const dlg=document.getElementById('solveDlg');if(!dlg)return;
+  const inp=document.getElementById('solveIn');
+  const open=()=>{inp.value=document.getElementById('scr').textContent;document.getElementById('solveOut').replaceChildren();if(dlg.showModal)dlg.showModal();else dlg.setAttribute('open','');solveScramble(inp.value);};
+  document.querySelectorAll('[data-solve]').forEach(b=>b.onclick=e=>{e.preventDefault();open();});
+  document.getElementById('solveGo').onclick=()=>solveScramble(inp.value);
+  document.getElementById('solveRand').onclick=()=>{inp.value=makeScramble();solveScramble(inp.value);};
+  inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();solveScramble(inp.value);}};
+  dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.close();});
+}
+
+function initSpy(){
+  const links=[...document.querySelectorAll('nav.bar a[href^="#"]')].filter(a=>document.getElementById(a.getAttribute('href').slice(1)));
+  if(!('IntersectionObserver' in window))return;
+  const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){links.forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+e.target.id));const on=links.find(a=>a.classList.contains('on'));if(on&&on.scrollIntoView&&matchMedia('(min-width:1px)').matches){const bar=on.parentElement;bar.scrollTo({left:on.offsetLeft-bar.clientWidth/2+on.clientWidth/2,behavior:'smooth'});}}});},{rootMargin:'-45% 0px -50% 0px'});
+  links.forEach(a=>io.observe(document.getElementById(a.getAttribute('href').slice(1))));
+}
 /* ---------- boot ---------- */
 applyStatic();
 renderF2L();
@@ -473,6 +588,6 @@ renderLL(OLLC,'ollcCards','oll','ollc');
 renderLL(PLLC,'pllcCards','pllc','pllc','corners');
 renderLL(PLLE,'plleCards','pll','plle','all');
 initHero();
-renderFull();renderCOLL();initZB();
+renderFull();renderCOLL();initZB();initAF2L();initSolver();initSpy();
 initPg();initTimer();initDrills();initFT();initQuiz();updateProgress();
 
