@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+Lao:wght@400;500;700&display=swap">
-<link rel="stylesheet" href="css/style.css?v=202611140200">
+<link rel="stylesheet" href="css/style.css?v=202611140300">
 </head>
 <body>
 
@@ -173,6 +173,50 @@
   <div class="chap-head"><span class="tag" style="background:var(--s-f2l)">Trainer</span><h2>X-cross &amp; XX-cross trainer</h2></div>
   <div class="prose"><p>Train the hardest part of inspection. Pick a mode, scramble your cube, plan the solution in 15 seconds, type what you planned, then compare it with the optimal one.</p></div>
   <div class="zb-tabs" id="xtTabs" role="tablist"></div>
+  <div class="xt-guide">
+    <div class="note" data-g="cross">
+      <h3>How to plan the cross</h3>
+      <ol>
+        <li>Find all 4 white edges. The cross is always 8 moves or fewer, usually 5–6.</li>
+        <li>Pick 2 edges that are easy to place together (same layer, already next to each other, or one move apart).</li>
+        <li>Add the other two. Say the moves in your head and follow the edges with your eyes, not just the letters.</li>
+        <li>Only then start: you should be able to do the whole cross without looking.</li>
+      </ol>
+      <p class="muted">Practice: first untimed, then with the 15 s timer. Aim for 8 moves or fewer every time.</p>
+    </div>
+    <div class="note" data-g="xcross">
+      <h3>How to plan an X-cross</h3>
+      <ol>
+        <li>Plan the cross first, exactly as usual.</li>
+        <li>Look for a corner-edge pair that is already joined, or a white corner on the bottom layer with its edge in the middle layer.</li>
+        <li>Follow that pair while you replay your cross moves in your head. A cross move that also moves the pair can join or insert it for free.</li>
+        <li>Use tricks: insert through an empty slot (keyhole), or build the pair in a slot with the bottom layer turned (pseudo-slot) and fix the bottom layer with the last cross move.</li>
+        <li>If nothing works in about 10 seconds, just plan the cross and track one pair. That is still a good inspection.</li>
+      </ol>
+      <p class="muted">Start with "Best slot". When you get faster, train each slot (FR, FL, BR, BL) so you are not stuck with only one.</p>
+    </div>
+    <div class="note" data-g="xxcross">
+      <h3>How to plan an XX-cross</h3>
+      <ol>
+        <li>Plan an X-cross first. An XX-cross is usually 9–11 moves, only a few more than an X-cross.</li>
+        <li>Look at what your X-cross moves do to a second pair. Often one extra move pairs it or puts it into its slot.</li>
+        <li>Pairs in opposite slots (FL + BR, FR + BL) are the hardest to see together. Train them on purpose with the Target menu.</li>
+        <li>Planning a full XX-cross in 15 seconds is very hard, even for fast solvers. On most solves plan the X-cross and track the second pair.</li>
+      </ol>
+      <p class="muted">Use the hint button: it tells you the easiest pair first, then the move count, then the first moves.</p>
+    </div>
+    <div class="note" data-g="ec">
+      <h3>How edge control works</h3>
+      <ol>
+        <li>A top edge is "oriented" when its yellow sticker faces up. If all 4 are oriented after F2L, the last layer is one ZBLL (or COLL + an edge PLL).</li>
+        <li>Key rule: R, L, U and D moves never change edge orientation. F and B quarter turns flip the four edges on that face.</li>
+        <li>So the same pair can be inserted two ways: with only R and U moves (keeps the flipped edges as they are) or with an F or B move (changes them).</li>
+        <li>Before inserting, count the flipped top edges and look where they are. Pick the insert that brings the count to zero.</li>
+        <li>Methods to learn later: VHLS (pair already joined, corner and edge ready to insert) and ZBLS (any last-slot case).</li>
+      </ol>
+      <p class="muted">The hint shows how many top edges are flipped right now. Compare the plain insert with the edge-control insert to learn the patterns.</p>
+    </div>
+  </div>
   <div class="xt">
     <div class="xt-top">
       <label class="muted xt-sel">Target <select id="xtTarget"></select></label>
@@ -189,7 +233,8 @@
         <label class="muted" for="xtAns">Your solution</label>
         <div class="algline"><textarea id="xtAns" rows="2" spellcheck="false" autocomplete="off" placeholder="e.g. R U' F2 D …"></textarea><button id="xtCheck" type="button">Check</button></div>
         <div id="xtCheckOut" aria-live="polite"></div>
-        <button id="xtReveal" type="button">Show optimal solution</button>
+        <div class="algline"><button id="xtHint" type="button">💡 Hint</button><button id="xtReveal" type="button">Show optimal solution</button></div>
+        <div id="xtHintOut" class="xt-hint" aria-live="polite"></div>
       </div>
     </div>
     <div id="xtOut" aria-live="polite"></div>
@@ -426,12 +471,12 @@ addEventListener('DOMContentLoaded',function(){try{
   }).catch(function(){});
 }catch(e){}});
 </script>
-<script src="js/zbll-data.js?v=202611140200"></script>
-<script src="js/f2l-data.js?v=202611140200"></script>
-<script src="js/solver.js?v=202611140200"></script>
-<script src="js/cube3d.js?v=202611140200"></script>
-<script src="js/hands3d.js?v=202611140200"></script>
-<script src="js/i18n.js?v=202611140200"></script>
-<script src="js/app.js?v=202611140200"></script>
+<script src="js/zbll-data.js?v=202611140300"></script>
+<script src="js/f2l-data.js?v=202611140300"></script>
+<script src="js/solver.js?v=202611140300"></script>
+<script src="js/cube3d.js?v=202611140300"></script>
+<script src="js/hands3d.js?v=202611140300"></script>
+<script src="js/i18n.js?v=202611140300"></script>
+<script src="js/app.js?v=202611140300"></script>
 </body>
 </html>

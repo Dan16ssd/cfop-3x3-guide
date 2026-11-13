@@ -701,7 +701,7 @@ function slotsOK(s){const out=[];for(const [n,x,z] of [['FR',1,1],['FL',-1,1],['
 function initXT(){
   const host=document.getElementById('xtrainer');if(!host)return;
   const $=id=>document.getElementById(id);
-  let mode='xcross',target='any',cur=null,cube=null,timer=0,stats={};
+  let mode='xcross',target='any',cur=null,cube=null,timer=0,stats={},hintLv=0;
   try{stats=JSON.parse(localStorage.getItem('cfop-xt')||'{}');}catch(e){}
   try{mode=localStorage.getItem('cfop-xt-mode')||'xcross';}catch(e){}
   const save=()=>{try{localStorage.setItem('cfop-xt',JSON.stringify(stats));localStorage.setItem('cfop-xt-mode',mode);}catch(e){}};
@@ -710,6 +710,7 @@ function initXT(){
   const drawTabs=()=>{[...tabs.children].forEach(b=>b.setAttribute('aria-selected',b.dataset.set===mode));
     $('xtTarget').innerHTML=XT_TARGETS[mode].map(([v,l])=>`<option value="${v}"${v===target?' selected':''}>${L(l)}</option>`).join('');
     $('xtHow').textContent=L({cross:'Plan the whole white cross in inspection, then check your answer.',xcross:'Plan the cross plus one F2L pair (X-cross) in inspection.',xxcross:'Plan the cross plus two pairs (XX-cross). Hard: take your time at first.',ec:'Cross and 3 pairs are solved. Insert the last pair so that all 4 yellow edges end up oriented (yellow facing up).'}[mode]);
+    document.querySelectorAll('.xt-guide [data-g]').forEach(n=>n.hidden=n.dataset.g!==mode);
     drawStats();};
   $('xtTarget').onchange=e=>{target=e.target.value;newCase();};
   const st=()=>stats[mode]||(stats[mode]={n:0,opt:0,ok:0,diff:0});
@@ -727,7 +728,7 @@ function initXT(){
     return null;}
   async function newCase(){
     clearInterval(timer);$('xtClock').textContent='15';$('xtClock').className='xt-clock';
-    $('xtOut').replaceChildren();$('xtAns').value='';$('xtCheckOut').replaceChildren();
+    $('xtOut').replaceChildren();$('xtAns').value='';$('xtCheckOut').replaceChildren();$('xtHintOut').replaceChildren();hintLv=0;
     if(mode==='ec'){const toks=genEC(target);cur={mode,toks,sc:toks.join(' '),target};
       $('xtScr').textContent=cur.sc;$('xtHold').textContent=L('Hold white on the bottom and green in front, then do this scramble from a solved cube.');}
     else{const sc=makeScramble();cur={mode,sc,toks:conjZ2(sc),target};$('xtScr').textContent=sc;$('xtHold').textContent=L('Scramble with white on top and green in front (WCA). Then hold white on the bottom to solve.');}
@@ -768,6 +769,27 @@ function initXT(){
     play(scrambledModel(),ms);
     if(ok){const s=st();s.ok++;cur.p.then(()=>{const best=optimalFor();if(best){const d=Math.max(0,n-best.length);s.diff+=d;if(d===0)s.opt++;out.insertAdjacentHTML('beforeend',`<p class="muted">${d===0?L('That is optimal!'):Lt('xtExtra',d,best.length)}</p>`);}save();drawStats();});}
   }
+  function flippedTop(){const m=scrambledModel();const ctrU=m.find(x=>eq(x.p,[0,1,0])&&x.n[1]===1).c;let n=0;
+    for(const x of m)if(x.p[1]===1&&nz(x.p)===2&&x.c===ctrU&&x.n[1]!==1)n++;return n;}
+  async function hint(){
+    const box=$('xtHintOut');box.innerHTML=`<p class="muted sol-wait">${L('Thinking…')}</p>`;
+    let r;try{r=await cur.p;}catch(e){box.innerHTML='';return;}
+    hintLv++;const lines=[];
+    if(cur.mode==='ec'){const e=r.ec;
+      lines.push(Lt('hFlipped',flippedTop()));
+      if(hintLv>=2)lines.push(Lt('hEcLen',e.plain?e.plain.length:'–',e.ec?e.ec.length:'–'));
+      if(hintLv>=3&&e.ec)lines.push(Lt('hStart',e.ec.slice(0,Math.ceil(e.ec.length/3)).join(' ')));
+      if(hintLv>=4&&e.ec)lines.push(Lt('hUses',e.ec.some(t=>/^[FB]/.test(t))?L('an F or B move to fix the edges'):L('only R/L and U moves')));}
+    else{const rep=r.report,best=optimalFor();
+      if(rep.per.length){const ok=rep.per.filter(p=>p.r);const min=Math.min(...ok.map(p=>p.r.moves.length));
+        lines.push(cur.target==='any'?Lt('hEasiest',ok.filter(p=>p.r.moves.length===min).map(p=>p.slots.join(' + ')).join(', '),min):Lt('hTarget',cur.target,best?best.length:'–',min));}
+      else lines.push(Lt('hLen',best?best.length:'–'));
+      if(hintLv>=2&&best)lines.push(Lt('hLen',best.length));
+      if(hintLv>=3&&best)lines.push(Lt('hStart',best.slice(0,2).join(' ')));
+      if(hintLv>=4&&best)lines.push(Lt('hStart',best.slice(0,Math.ceil(best.length/2)).join(' ')));}
+    box.innerHTML=lines.map(x=>`<p>💡 ${x}</p>`).join('')+(hintLv<4?`<p class="muted">${L('Press Hint again for more.')}</p>`:'');
+  }
+  $('xtHint').onclick=hint;
   $('xtNew').onclick=newCase;$('xtReveal').onclick=reveal;$('xtCheck').onclick=check;
   $('xtAns').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();check();}};
   $('xtWatch').onclick=()=>{if(!cur)return;const m=startModel();const moves=parse(cur.mode==='ec'?cur.sc:cur.sc+' z2');play(m,moves);};
