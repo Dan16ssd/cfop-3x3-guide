@@ -697,6 +697,101 @@ function initSolver(){
   document.getElementById('solveGo').addEventListener('click',()=>{document.getElementById('solView').hidden=true;});
 }
 
+/* ---------- recognition & memory trainer ---------- */
+const RC_SETS=[
+ ['2oll','2-look OLL',()=>[...OLLE.map((x,i)=>({id:'olle'+i,name:L(x.name),alg:x.alg,mode:'olle',g:'e'})),...OLLC.map((x,i)=>({id:'ollc'+i,name:L(x.name),alg:x.alg,mode:'oll',g:'c'}))]],
+ ['2pll','2-look PLL',()=>[...PLLC.map((x,i)=>({id:'pllc'+i,name:L(x.name),alg:x.alg,mode:'pllc',g:'c'})),...PLLE.map((x,i)=>({id:'plle'+i,name:L(x.name),alg:x.alg,mode:'pll',g:'e'}))]],
+ ['oll','Full OLL',()=>OLL_GROUPS.flatMap(([g,ns])=>ns.map(n=>({id:'foll'+n,name:'OLL '+n,alg:OLL_ALGS[n],mode:'oll',g,grp:L(g)})))],
+ ['pll','Full PLL',()=>PLL_GROUPS.flatMap(([g,ns])=>ns.map(n=>({id:'fpll'+n,name:n+'-perm',alg:PLL_ALGS[n],mode:'pll',g,grp:L(g)})))],
+ ['coll','COLL',()=>{const c={};return COLL.map(([sh,alg],i)=>{c[sh]=(c[sh]||0)+1;return{id:'coll'+i,name:'COLL '+(sh==='Oriented'?L(c[sh]===1?'Adjacent swap':'Diagonal swap'):sh+' '+c[sh]),alg,mode:'coll',g:sh};});}]
+];
+function initRecog(){
+  const $=id=>document.getElementById(id),page=$('recog');if(!page)return;
+  const MODES=[['name','Name it'],['alg','Recall the algorithm'],['pic','Algorithm → case']];
+  const HOW={name:'Look at the case and pick its name as fast as you can. Your time is measured.',
+    alg:'Look at the case and say or do its algorithm. Then reveal and be honest: did you remember it?',
+    pic:'Read the algorithm and pick the case it solves. This links the moves to the picture in your memory.'};
+  let cfg={sets:['2oll','2pll'],mode:'name',learned:false};try{Object.assign(cfg,JSON.parse(localStorage.getItem('cfop-rccfg'))||{});}catch(e){}
+  let db={};try{db=JSON.parse(localStorage.getItem('cfop-recog'))||{};}catch(e){}
+  const save=()=>{try{localStorage.setItem('cfop-recog',JSON.stringify(db));localStorage.setItem('cfop-rccfg',JSON.stringify(cfg));}catch(e){}};
+  const ALL=RC_SETS.map(([k,lab,f])=>[k,lab,f()]);
+  const rnd=a=>a[Math.floor(Math.random()*a.length)];
+  const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+  const AUFX={U:"U'",U2:'U2',"U'":'U'};
+  const sets=$('rcSets'),modes=$('rcModes'),box=$('rcDia'),q=$('rcQ'),how=$('rcHow'),opts=$('rcOpts'),ans=$('rcAns'),btns=$('rcBtns'),lc=$('rcLearned');
+  let pool=[],cur=null,curOpts=[],phase='ask',t0=0,last=null,forced=null,ses={n:0,ok:0,streak:0,best:0,t:[]};
+  const known=r=>r&&r.st>=3;
+  const weight=it=>{const r=db[it.id];if(!r||!r.n)return 4;return (1+4*(1-r.ok/r.n))/(1+r.st)+(r.t>3000?.5:0);};
+  const buildPool=()=>{pool=ALL.filter(([k])=>cfg.sets.includes(k)).flatMap(([,,l])=>l);if(cfg.learned)pool=pool.filter(x=>learned.has(x.id));};
+  const pick=()=>{if(forced&&pool.includes(forced)){const f=forced;forced=null;return f;}forced=null;
+    const c=pool.filter(x=>x!==last),list=c.length?c:pool;let tot=0;const w=list.map(x=>tot+=weight(x));const r=Math.random()*tot;return list[Math.max(0,w.findIndex(v=>v>=r))];};
+  const options=it=>{const others=shuffle(pool.filter(x=>x!==it&&x.name!==it.name));
+    const same=others.filter(x=>x.g===it.g&&x.mode===it.mode),like=others.filter(x=>x.mode===it.mode&&!same.includes(x)),rest=others.filter(x=>x.mode!==it.mode);
+    const out=[it];for(const x of [...same.slice(0,2),...like,...same.slice(2),...rest]){if(out.length>=4)break;if(!out.some(o=>o.name===x.name))out.push(x);}
+    return shuffle(out);};
+  const drawSets=()=>{sets.replaceChildren(...ALL.map(([k,lab,l])=>{const b=document.createElement('button');b.type='button';b.className='rc-chip';b.setAttribute('aria-pressed',cfg.sets.includes(k));
+    const kn=l.filter(x=>known(db[x.id])).length;b.innerHTML=`${L(lab)} <span class="cnt">${kn}/${l.length}</span>`;
+    b.onclick=()=>{cfg.sets=cfg.sets.includes(k)?cfg.sets.filter(x=>x!==k):[...cfg.sets,k];save();drawSets();next();};return b;}));};
+  const drawModes=()=>{modes.replaceChildren(...MODES.map(([k,lab])=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','tab');b.setAttribute('aria-selected',cfg.mode===k);b.textContent=L(lab);
+    b.onclick=()=>{cfg.mode=k;save();drawModes();next();};return b;}));how.textContent=L(HOW[cfg.mode]);};
+  const drawStats=()=>{const kn=pool.filter(x=>known(db[x.id])).length,avg=ses.t.length?(ses.t.reduce((a,b)=>a+b,0)/ses.t.length/1000).toFixed(2)+' s':'–';
+    $('rcScore').textContent=ses.n?ses.ok+' / '+ses.n:'–';$('rcStreak').textContent=ses.streak+(ses.best?' ('+L('best')+' '+ses.best+')':'');$('rcAvg').textContent=avg;
+    $('rcKnown').textContent=Lt('rcKnown',kn,pool.length);$('rcFill').style.width=(pool.length?kn/pool.length*100:0)+'%';};
+  const drawWeak=()=>{const h=$('rcWeak');const w=pool.filter(x=>db[x.id]&&db[x.id].n&&(db[x.id].ok<db[x.id].n||db[x.id].t>2500))
+      .sort((a,b)=>{const ra=db[a.id],rb=db[b.id];return ra.ok/ra.n-rb.ok/rb.n||rb.t-ra.t;}).slice(0,8);
+    if(!w.length){h.innerHTML=`<p class="muted">${L('No weak cases yet. Cases you miss or recognize slowly show up here.')}</p>`;return;}
+    h.replaceChildren(...w.map(x=>{const r=db[x.id],b=document.createElement('button');b.type='button';b.className='rc-wk';b.title=L('Practice this case next');
+      b.appendChild(llDiagram(caseOf(x.alg),x.mode));b.insertAdjacentHTML('beforeend',`<b>${x.name}</b><small>${r.ok}/${r.n} ✓${r.t?' · '+(r.t/1000).toFixed(1)+' s':''}</small>`);
+      b.onclick=()=>{forced=x;next();page.querySelector('.rc-main').scrollIntoView({block:'center',behavior:'smooth'});};return b;}));};
+  const record=(ok,ms)=>{const r=db[cur.id]||(db[cur.id]={n:0,ok:0,st:0,t:0});r.n++;
+    if(ok){r.ok++;r.st++;r.t=r.t?Math.round(r.t*.7+ms*.3):Math.round(ms);}else r.st=0;
+    ses.n++;if(ok){ses.ok++;ses.streak++;ses.best=Math.max(ses.best,ses.streak);ses.t.push(ms);}else ses.streak=0;
+    save();drawStats();drawWeak();drawSets();};
+  const algHTML=()=>{const auf=cur.pre?AUFX[cur.pre]:'',m=memo(cur.alg);
+    return `<b class="rc-name">${cur.name}</b>${cur.grp?` <span class="muted">· ${cur.grp}</span>`:''}<div><code>${auf?'('+auf+') ':''}${cur.alg}</code></div>${m.cover>0?`<div class="mem">${m.html}</div>`:''}`;};
+  const btn=(txt,cls,fn)=>{const b=document.createElement('button');b.type='button';if(cls)b.className=cls;b.textContent=txt;b.onclick=fn;return b;};
+  const doneBtns=()=>{btns.replaceChildren(btn(L('Next case')+' ▶','primary',next),btn(L('Try it in 3D'),'',()=>loadCase(cur.alg,cur.name)));};
+  const answer=i=>{if(phase!=='ask'||cfg.mode==='alg')return;const o=curOpts[i];if(!o)return;const ms=performance.now()-t0,ok=o===cur;phase='done';
+    [...opts.children].forEach((b,j)=>{b.disabled=true;if(curOpts[j]===cur)b.classList.add('ok');else if(j===i)b.classList.add('bad');});
+    record(ok,ms);
+    ans.innerHTML=`<div class="rc-res ${ok?'ok':'bad'}">${ok?'✓ '+L('Right!'):'✗ '+L('Not this one.')} <span class="muted">${(ms/1000).toFixed(2)} s</span></div>`+algHTML();
+    if(cfg.mode==='pic')box.replaceChildren(llDiagram(caseOf(cur.alg,cur.pre),cur.mode));
+    doneBtns();};
+  const reveal=()=>{if(phase!=='ask'||cfg.mode!=='alg')return;const ms=performance.now()-t0;phase='grade';
+    ans.innerHTML=`<div class="muted rc-t">${L('Recall time')}: ${(ms/1000).toFixed(2)} s</div>`+algHTML();
+    const g=ok=>()=>{if(phase!=='grade')return;phase='done';record(ok,ms);next();};
+    btns.replaceChildren(btn('✓ '+L('Got it'),'primary rc-g',g(true)),btn('✗ '+L('Missed it'),'rc-m',g(false)));};
+  function next(){
+    if(page.contains(document.activeElement))document.activeElement.blur();
+    buildPool();ans.innerHTML='';opts.replaceChildren();btns.replaceChildren();box.replaceChildren();q.innerHTML='';drawStats();drawWeak();
+    if(!pool.length){phase='none';q.innerHTML=`<p class="muted">${L(cfg.learned?'You have not marked any case in these sets as learned yet. Untick "only learned" or tick Learned on the cards.':'Pick at least one set above.')}</p>`;return;}
+    cur=pick();last=cur;cur.pre=rnd(AUFS);phase='ask';
+    if(cfg.mode==='pic'){
+      q.innerHTML=`<div class="muted">${L('Which case does this algorithm solve?')}</div><code class="rc-alg">${cur.alg}</code>`;
+      curOpts=options(cur);opts.className='rc-opts pics';
+      curOpts.forEach((o,i)=>{const b=document.createElement('button');b.type='button';b.innerHTML=`<kbd>${i+1}</kbd>`;b.appendChild(llDiagram(caseOf(o.alg,o===cur?cur.pre:rnd(AUFS)),o.mode));b.onclick=()=>answer(i);opts.appendChild(b);});
+    }else{
+      box.appendChild(llDiagram(caseOf(cur.alg,cur.pre),cur.mode));
+      if(cfg.mode==='name'){q.innerHTML=`<div class="muted">${L('Which case is this?')}</div>`;curOpts=options(cur);opts.className='rc-opts';
+        curOpts.forEach((o,i)=>{const b=document.createElement('button');b.type='button';b.innerHTML=`<kbd>${i+1}</kbd> ${o.name}`;b.onclick=()=>answer(i);opts.appendChild(b);});}
+      else{q.innerHTML=`<div class="muted">${L('What is the algorithm? Say it or do it, then reveal.')}</div>`;btns.replaceChildren(btn(L('Reveal'),'primary',reveal));}
+    }
+    t0=performance.now();
+  }
+  lc.checked=!!cfg.learned;lc.onchange=()=>{cfg.learned=lc.checked;save();next();};
+  let armed=0;const rs=$('rcReset');rs.onclick=()=>{if(Date.now()-armed>4000){armed=Date.now();rs.textContent=L('Click again to erase');setTimeout(()=>{rs.textContent=L('Reset memory');},4000);return;}
+    db={};ses={n:0,ok:0,streak:0,best:0,t:[]};armed=0;rs.textContent=L('Reset memory');save();drawSets();next();};
+  document.addEventListener('keydown',e=>{if(page.hidden||e.ctrlKey||e.metaKey||e.altKey)return;const tg=e.target.tagName;
+    if(['INPUT','SELECT','TEXTAREA'].includes(tg)||e.target.isContentEditable||document.querySelector('dialog[open]'))return;
+    const k=e.key.toLowerCase();
+    if(phase==='ask'&&cfg.mode!=='alg'&&/^[1-4]$/.test(k)){e.preventDefault();answer(+k-1);}
+    else if(phase==='ask'&&cfg.mode==='alg'&&(k===' '||k==='enter')){e.preventDefault();reveal();}
+    else if(phase==='grade'&&(k==='g'||k==='m')){e.preventDefault();btns.querySelector(k==='g'?'.rc-g':'.rc-m').click();}
+    else if(phase==='done'&&(k===' '||k==='enter'||k==='n'||k==='arrowright')){e.preventDefault();next();}});
+  drawSets();drawModes();
+  let started=false;const io=new IntersectionObserver(es=>{if(!started&&es.some(e=>e.isIntersecting)){started=true;next();}});io.observe(page.querySelector('.rc-main'));
+}
+
 /* ---------- pages: landing + one topic at a time ---------- */
 const PAGES=[...document.querySelectorAll('section.chap')].map(x=>x.id);
 function go(id){if(location.hash!=='#'+id)location.hash=id;else route();}
@@ -955,5 +1050,5 @@ renderLL(PLLC,'pllcCards','pllc','pllc','corners');
 renderLL(PLLE,'plleCards','pll','plle','all');
 initHero();
 renderFull();renderCOLL();initZB();initAF2L();initSolver();initXT();initPages();
-initPg();initTimer();initDrills();initFT();initQuiz();updateProgress();
+initPg();initTimer();initDrills();initFT();initQuiz();initRecog();updateProgress();
 
