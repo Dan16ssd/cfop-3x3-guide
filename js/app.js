@@ -101,7 +101,7 @@ const F2L=[
  {g:'Split pair: set up, then insert',alg:"U' R U' R' U R U R'"},{g:'Split pair: set up, then insert',alg:"U F' U F U' F' U' F"},
  {g:'White sticker facing up',alg:"R U2 R' U' R U R'"},{g:'White sticker facing up',alg:"F' U2 F U F' U' F"}
 ];
-const OLLE=[{name:'Line',alg:"F R U R' U' F'",tip:'Hold the line horizontally.'},{name:'L-shape',alg:"f R U R' U' f'",tip:'Hold the L at the back-left.'},{name:'Dot',alg:"F R U R' U' F' f R U R' U' f'",tip:'Line alg, then L alg.'}];
+const OLLE=[{name:'Line',alg:"F R U R' U' F'",tip:'Hold the line horizontally.'},{name:'L-shape',alg:"f R U R' U' f'",tip:'Hold the L at the front-right.'},{name:'Dot',alg:"F R U R' U' F' f R U R' U' f'",tip:'Line alg, then L alg.'}];
 const OLLC=[
  {name:'Sune',alg:"R U R' U R U2 R'",tip:'One yellow corner on top: hold it front-left.'},
  {name:'Antisune',alg:"R U2 R' U' R U' R'",tip:'Mirror image of Sune: one yellow corner, other way round.'},

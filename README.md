@@ -14,6 +14,9 @@ A website for learning the CFOP method on the 3x3 cube, in English and Lao (เบฅเ
 - **Cross and F2L**: tips plus 12 intuitive F2L cases.
 - **Advanced F2L**: all 41 F2L cases for every slot (FR, FL, BR, BL) with rotation-free algorithms, plus X-cross, XX-cross, keyhole, multi-slotting, pseudo-slotting and edge control.
 - **CFOP solver**: paste a scramble and get a fast CFOP solution. It tries cross, X-cross and XX-cross starts, solves pairs with optimal F2L, uses edge control on the last pair, then finishes with ZBLL or OLL + PLL.
+- **Learning path**: chapter-by-chapter lessons with Coach Dann, from the beginner method to sub-8, with quizzes, algorithms to try in 3D, XP, a day streak, and timer checkpoints (sub-2:00 down to sub-8).
+- **Recognition trainer**: name the case, recall the algorithm, or match an algorithm to its case, for 2-look OLL/PLL, full OLL/PLL and COLL. Missed cases come back more often.
+- **Vs friend**: two players race on one scramble with their own timers, editable names, +2/DNF and a score.
 - **X-cross trainer**: practice cross, X-cross, XX-cross (any slot or pair, including diagonal FL + BR) and last-slot edge control, plus drills for every advanced F2L technique (back slots without rotations, keyhole, pseudo-slotting, multi-slotting). A 10-step training path tells you what to master first and when to move on. 15 s inspection timer, answer checking against the optimal solution, hints and stats.
 - **Scrambles**: every algorithm card shows a scramble that sets up that case.
 - **Last layer**: 2-look OLL/PLL, full OLL (57), full PLL (21), COLL (42), full ZBLL (493).
