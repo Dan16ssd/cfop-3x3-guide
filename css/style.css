@@ -486,3 +486,17 @@ nav.bar .brand img{width:26px;height:26px}
 .xt-goal{color:var(--yellow)}
 .af-cta{margin:18px 0 6px}
 @media (max-width:520px){.xp-step{grid-template-columns:30px 1fr}.xp-btns{grid-column:2;display:flex;flex-wrap:wrap}.xp-top{flex-direction:column}}
+
+/* playground case navigation */
+.pg-nav{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin:0 0 14px;padding:10px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid var(--line)}
+.pg-nav button{min-height:40px}
+.pg-cases{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pg-cases span{font-weight:700;font-size:.88rem;padding:0 4px}
+.pg-nav button[disabled]{opacity:.4;cursor:default}
+.card.flash{box-shadow:0 0 0 2px var(--yellow),0 0 24px rgba(255,210,63,.35);transition:box-shadow .3s}
+@media (max-width:520px){.pg-nav,.pg-cases{width:100%}.pg-cases{justify-content:space-between}.pg-cases span{order:-1;width:100%;text-align:center}.pg-cases button{flex:1}}
+
+.af-colors{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin:0 0 12px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line)}
+.af-colors label{display:flex;gap:8px;align-items:center;font-weight:600;font-size:.88rem}
+.af-colors i{width:16px;height:16px;border-radius:4px;border:1px solid rgba(0,0,0,.4);display:inline-block}
+.af-colors p{margin:0;font-size:.8rem;flex-basis:100%}

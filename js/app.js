@@ -159,7 +159,7 @@ function card(item,diagram,id){
   d.insertAdjacentHTML('beforeend',`<div class="nm"><b>${L(item.name)}</b>${item.sub?`<span>${String(item.sub).replace(/^(\d+) moves$/,(m,n)=>Lt('moves',n))}</span>`:''}</div><div class="alg">${item.alg}</div><div class="scr-line"><span>${L('Scramble')}</span><code>${scrambleOf(item.alg)}</code></div>${(()=>{const m=memo(item.alg);return m.cover>0?`<div class="mem"><span class="mem-h">${L('Memorize as')}</span>${m.html}</div>`:'';})()}${item.tip?`<div class="hint">${L(item.tip)}</div>`:''}`);
   const row=document.createElement('div');row.className='row';
   row.innerHTML=`<label class="chk"><input type="checkbox" id="lr-${id}" ${learned.has(id)?'checked':''}> ${L('Learned')}</label>`;
-  const b=document.createElement('button');b.className='sm';b.textContent=L('Try it');b.onclick=()=>loadCase(item.alg,L(item.name));row.appendChild(b);
+  d._case={alg:item.alg,name:L(item.name)};const b=document.createElement('button');b.className='sm';b.textContent=L('Try it');b.onclick=()=>loadCase(item.alg,L(item.name),d);row.appendChild(b);
   if(item.easy){const e=document.createElement('button');e.className='sm easy-b';e.textContent=L('Easy way');e.onclick=()=>toggleEasy(d,item);row.appendChild(e);}
   row.querySelector('input').onchange=e=>{e.target.checked?learned.add(id):learned.delete(id);d.classList.toggle('learned',e.target.checked);saveLearned();};
   d.appendChild(row);return d;
@@ -201,7 +201,27 @@ function drawPg(animated){document.getElementById('pgNet').replaceChildren(netDi
   else document.getElementById('pgIso').replaceChildren(isoDiagram(pg,null,'iso'));}
 function drawSteps(){const h=document.getElementById('pgSteps');h.replaceChildren();queue.forEach((m,i)=>{const sp=document.createElement('span');sp.textContent=m.text;if(i<qi)sp.className='done';else if(i===qi)sp.className='next';h.appendChild(sp);});document.getElementById('pgStep').disabled=qi>=queue.length;}
 function status(t,err){const s=document.getElementById('pgStatus');s.textContent=t;s.classList.toggle('err',!!err);}
-function loadCase(alg,name){pg=solved();applyAlg(pg,invert(parse(alg)));queue=parse(alg);qi=0;drawPg();drawSteps();status(Lt('loaded',name));document.getElementById('algIn').value=alg;go('playground');}
+/* bar above the playground: back to where you came from, previous / next case */
+const curPage=()=>location.hash.slice(1);
+function pgNavShow(ctx){
+  const nav=document.getElementById('pgNav');if(!nav)return;
+  const from=ctx&&ctx.from!=null&&ctx.from!=='playground'?ctx.from:null;
+  if(from===null){nav.hidden=true;nav.replaceChildren();return;}
+  const sec=from&&document.getElementById(from);
+  const lab=sec&&sec.querySelector('h2')?sec.querySelector('h2').textContent:L('All topics');
+  const n=ctx.list?ctx.list.length:0;
+  nav.hidden=false;
+  nav.innerHTML=`<button class="pg-back" type="button" data-a="back">← ${Lt('backTo',lab)}</button>${n>1?`<div class="pg-cases"><button type="button" data-a="prev"${ctx.i<=0?' disabled':''}>◀ ${L('Previous case')}</button><span>${ctx.name} · ${ctx.i+1}/${n}</span><button type="button" class="primary" data-a="next"${ctx.i>=n-1?' disabled':''}>${L('Next case')} ▶</button></div>`:''}`;
+  nav.querySelector('[data-a=back]').onclick=()=>{const c=ctx.card;if(sec)go(from);else location.hash='';
+    if(c)setTimeout(()=>{c.scrollIntoView({block:'center'});c.classList.add('flash');setTimeout(()=>c.classList.remove('flash'),1600);},80);};
+  const step=k=>{const t=ctx.list[ctx.i+k];if(t&&t._case)loadCase(t._case.alg,t._case.name,t,from,ctx.list);};
+  if(n>1){nav.querySelector('[data-a=prev]').onclick=()=>step(-1);nav.querySelector('[data-a=next]').onclick=()=>step(1);}
+}
+function loadCase(alg,name,el,from,list){
+  if(el){if(from==null){const sec=el.closest('section.chap');from=sec?sec.id:curPage();list=[...(sec||document).querySelectorAll('.card')].filter(c=>c._case&&c.offsetParent!==null);}
+    pgNavShow({from,list,i:list.indexOf(el),card:el,name});}
+  else pgNavShow({from:curPage()});
+  pg=recolor(solved(),el&&el._case&&el._case.map);applyAlg(pg,invert(parse(alg)));queue=parse(alg);qi=0;drawPg();drawSteps();status(Lt('loaded',name));document.getElementById('algIn').value=alg;go('playground');}
 function initPg(){
   const pad=document.getElementById('movepad');
   ["R","R'","L","L'","U","U'","D","D'","F","F'","B","B'","M","M'","R2","U2","x","y"].forEach(m=>{const b=document.createElement('button');b.textContent=m;b.onclick=()=>{parse(m).forEach(pgMove);queue=[];qi=0;drawPg(true);drawSteps();status(Lt('did',m));};pad.appendChild(b);});
@@ -272,7 +292,7 @@ function initTimer(){
   document.addEventListener('keyup',e=>{if(e.target.tagName==='INPUT')return;if(e.code==='Space'||state==='stopped'){up();}});
   clock.addEventListener('pointerdown',e=>{e.preventDefault();down();});clock.addEventListener('pointerup',e=>{e.preventDefault();up();});
   document.getElementById('newScr').onclick=newScr;
-  document.getElementById('scrToPg').onclick=()=>{pg=solved();applyAlg(pg,'z2 '+scr.textContent+' z2');queue=[];qi=0;drawPg();drawSteps();status(L('Timer scramble loaded (scrambled white-top, shown white-bottom).'));go('playground');};
+  document.getElementById('scrToPg').onclick=()=>{pg=solved();applyAlg(pg,'z2 '+scr.textContent+' z2');queue=[];qi=0;drawPg();drawSteps();status(L('Timer scramble loaded (scrambled white-top, shown white-bottom).'));pgNavShow({from:curPage()});go('playground');};
   document.getElementById('delLast').onclick=()=>{times.pop();drawTimes();};
   let armed=false;const cl=document.getElementById('clearTimes');cl.onclick=()=>{if(!armed){armed=true;cl.textContent=L('Click again to clear');setTimeout(()=>{armed=false;cl.textContent=L('Clear session');},2500);return;}times=[];drawTimes();armed=false;cl.textContent=L('Clear session');};
   drawTimes();
@@ -427,7 +447,7 @@ function initDrills(){
     const toks=parse(d.alg).map(m=>`<span class="tok"><b>${m.text}</b><i>${FINGER[m.text]||''}</i></span>`).join('');
     c.innerHTML=`<div class="nm"><b>${d.name}</b><span>${Lt('xSolved',d.n)}</span></div><div class="toks">${toks}</div><div class="hint">${L(d.why)}</div><div class="hint"><b>${L('Target:')}</b> ${Lt('target',d.t)}</div>`;
     const row=document.createElement('div');row.className='row';
-    const b1=document.createElement('button');b1.className='sm';b1.textContent=L('Try it');b1.onclick=()=>{pg=solved();queue=[];for(let k=0;k<d.n;k++)queue.push(...parse(d.alg));qi=0;drawPg();drawSteps();document.getElementById('algIn').value=d.alg;status(Lt('queued',d.name,d.n));go('playground');};
+    const b1=document.createElement('button');b1.className='sm';b1.textContent=L('Try it');b1.onclick=()=>{pg=solved();queue=[];for(let k=0;k<d.n;k++)queue.push(...parse(d.alg));qi=0;drawPg();drawSteps();document.getElementById('algIn').value=d.alg;status(Lt('queued',d.name,d.n));pgNavShow({from:curPage()});go('playground');};
     const b2=document.createElement('button');b2.className='sm';b2.textContent=L('Time it');b2.onclick=()=>{sel.value=i;sel.onchange();document.getElementById('drillTimer').scrollIntoView({block:'center'});};
     row.append(b1,b2);c.appendChild(row);host.appendChild(c);
     const o=document.createElement('option');o.value=i;o.textContent=d.name+' ×'+d.n;sel.appendChild(o);});
@@ -490,24 +510,42 @@ function initHero(){
 
 /* ---------- advanced F2L ---------- */
 const AF2L_GROUPS=['Both pieces in the top layer','Corner on top, edge in the slot','Corner in the slot, edge on top','Both pieces in the slot'];
+/* recolor a case: pick the cross color and the front color (default white cross, green front) */
+const OPP={W:'Y',Y:'W',G:'B',B:'G',R:'O',O:'R'},COL_NAME={W:'White',Y:'Yellow',G:'Green',B:'Blue',R:'Red',O:'Orange'};
+function colorMap(cross,front){
+  if(cross==='W'&&front==='G')return null;
+  const ctr=(m,n)=>m.find(s=>nz(s.p)===1&&eq(s.n,n)).c,dirs=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]],base=solved();
+  for(const a of ['','x','x2',"x'",'z',"z'"])for(const b of ['','y','y2',"y'"]){const m=solved();if(a)applyAlg(m,a);if(b)applyAlg(m,b);
+    if(ctr(m,[0,-1,0])===cross&&ctr(m,[0,0,1])===front){const map={};for(const n of dirs)map[ctr(base,n)]=ctr(m,n);return map;}}
+  return null;}
+const recolor=(s,map)=>{if(map)for(const x of s)x.c=map[x.c];return s;};
 const AF2L_SLOTS=[['FR','Front-right','','R U F'],['FL','Front-left',"y'",'L U F'],['BR','Back-right','y','R U B'],['BL','Back-left','y2','L U B']];
 function initAF2L(){
   if(typeof AF2L==='undefined')return;
   const tabs=document.getElementById('afTabs'),host=document.getElementById('afCards');
   Object.keys(AF2L).forEach(sl=>AF2L[sl].forEach((x,i)=>allIds.add('af-'+sl+'-'+i)));
   let saved='FR';try{saved=localStorage.getItem('cfop-afslot')||'FR';}catch(e){}
-  const show=sl=>{[...tabs.children].forEach(b=>b.setAttribute('aria-selected',b.dataset.set===sl));try{localStorage.setItem('cfop-afslot',sl);}catch(e){}
+  let col={x:'W',f:'G'};try{col=JSON.parse(localStorage.getItem('cfop-afcol'))||col;}catch(e){}
+  const xs=document.getElementById('afCross'),fs=document.getElementById('afFront');
+  const fillCol=()=>{if(!xs)return;xs.innerHTML=Object.keys(COL_NAME).map(c=>`<option value="${c}"${c===col.x?' selected':''}>${L(COL_NAME[c])}</option>`).join('');
+    if(col.f===col.x||col.f===OPP[col.x])col.f=Object.keys(COL_NAME).find(c=>c!==col.x&&c!==OPP[col.x]);
+    fs.innerHTML=Object.keys(COL_NAME).filter(c=>c!==col.x&&c!==OPP[col.x]).map(c=>`<option value="${c}"${c===col.f?' selected':''}>${L(COL_NAME[c])}</option>`).join('');
+    document.querySelectorAll('.af-colors i[data-c]').forEach(i=>{i.style.background=HEX[i.dataset.c==='x'?col.x:col.f];});};
+  document.querySelectorAll('.af-colors .cl').forEach(x=>{x.textContent=L(x.textContent);});
+  if(xs){xs.onchange=()=>{col.x=xs.value;fillCol();redraw();};fs.onchange=()=>{col.f=fs.value;fillCol();redraw();};}
+  let curSl='FR';const redraw=()=>{try{localStorage.setItem('cfop-afcol',JSON.stringify(col));}catch(e){}show(curSl);};
+  const show=sl=>{curSl=sl;const map=colorMap(col.x,col.f);[...tabs.children].forEach(b=>b.setAttribute('aria-selected',b.dataset.set===sl));try{localStorage.setItem('cfop-afslot',sl);}catch(e){}
     const cfg=AF2L_SLOTS.find(c=>c[0]===sl);const home={FR:[1,1],FL:[-1,1],BR:[1,-1],BL:[-1,-1]}[sl];
     const mask=st=>{const h=st.h;return nz(h)===1||(h[1]===-1&&nz(h)===2)||eq(h,[home[0],-1,home[1]])||eq(h,[home[0],0,home[1]]);};
     host.replaceChildren();host.insertAdjacentHTML('beforeend',`<p class="muted af-note">${Lt('afNote',L(cfg[1]),cfg[3])}</p>`);
     let g=-1,grid,n=0;
     AF2L[sl].forEach(([grp,alg],i)=>{
       if(grp!==g){g=grp;host.insertAdjacentHTML('beforeend',`<div class="group-title">${L(AF2L_GROUPS[grp])}</div>`);grid=document.createElement('div');grid.className='cards';host.appendChild(grid);}
-      n++;const st=caseOf(alg);if(cfg[2])applyAlg(st,cfg[2]);
-      grid.appendChild(card({name:sl+' · '+Lt('case',n),sub:alg.split(' ').length+' moves',alg},isoDiagram(st,mask),'af-'+sl+'-'+i));});
+      n++;const st=recolor(caseOf(alg),map);if(cfg[2])applyAlg(st,cfg[2]);
+      const cd=card({name:sl+' · '+Lt('case',n),sub:alg.split(' ').length+' moves',alg},isoDiagram(st,mask),'af-'+sl+'-'+i);cd._case.map=map;grid.appendChild(cd);});
     updateProgress();};
   AF2L_SLOTS.forEach(([k,label])=>{const b=document.createElement('button');b.dataset.set=k;b.setAttribute('role','tab');b.innerHTML=`${k} <span class="cnt">${L(label)}</span>`;b.onclick=()=>show(k);tabs.appendChild(b);});
-  show(AF2L[saved]?saved:'FR');
+  fillCol();show(AF2L[saved]?saved:'FR');
 }
 
 /* ---------- CFOP solver (modal) ---------- */
@@ -583,7 +621,7 @@ async function solveScramble(sc){
     <div class="algline"><button id="solWatch">${L('Open in playground')}</button><button id="solCopy">${L('Copy solution')}</button></div>`;
   solPlayer(toks,flat,shown);
   const full=best.steps.map(x=>x.moves).filter(Boolean).join(' ');
-  document.getElementById('solWatch').onclick=()=>{document.getElementById('solveDlg').close();pg=solved();applyAlg(pg,toks.join(' '));queue=parse(full);qi=0;drawPg();drawSteps();status(L('Solution loaded. Press Next move to step through.'));document.getElementById('algIn').value=full;go('playground');};
+  document.getElementById('solWatch').onclick=()=>{document.getElementById('solveDlg').close();pg=solved();applyAlg(pg,toks.join(' '));queue=parse(full);qi=0;drawPg();drawSteps();status(L('Solution loaded. Press Next move to step through.'));document.getElementById('algIn').value=full;pgNavShow({from:curPage()});go('playground');};
   document.getElementById('solCopy').onclick=e=>{try{navigator.clipboard.writeText('z2 '+full);e.target.textContent=L('Copied');}catch(err){}};
 }
 /* Easy way: solve a last-layer case with only the 2-look (beginner) algorithms */

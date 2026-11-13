@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+Lao:wght@400;500;700&display=swap">
-<link rel="stylesheet" href="css/style.css?v=202611141000">
+<link rel="stylesheet" href="css/style.css?v=202611141300">
 </head>
 <body>
 
@@ -115,6 +115,7 @@
 
 <section class="chap" id="playground"><div class="wrap">
   <div class="chap-head"><h2>3D Playground</h2></div>
+  <div class="pg-nav" id="pgNav" hidden></div>
   <div class="prose"><p>A real 3D cube. Type any algorithm or tap moves and watch it turn. Every case card below has a <b>Try it</b> button: it loads the case here so you can step through the solution one move at a time.</p></div>
   <div class="pg">
     <div class="pg-views"><div id="pgIso" class="cube3d"></div><div id="pgNet"></div><p class="muted hint3d">Drag the cube to look around. Double-click to reset the view.</p></div>
@@ -166,6 +167,7 @@
   </div>
   <div class="cta af-cta"><a class="btn-y" href="#xtrainer">Train these techniques step by step →</a></div>
   <div class="group-title">All 41 F2L cases · every slot</div>
+  <div class="af-colors"><label><i data-c="x"></i><span class="cl">Cross color</span> <select id="afCross"></select></label><label><i data-c="f"></i><span class="cl">Front color</span> <select id="afFront"></select></label><p class="muted">Color neutral? Pick any cross and front color: every diagram and the 3D cube use your colors.</p></div>
   <div class="zb-tabs" id="afTabs" role="tablist"></div>
   <div id="afCards"></div>
 </div></section>
@@ -513,12 +515,12 @@ addEventListener('DOMContentLoaded',function(){try{
   }).catch(function(){});
 }catch(e){}});
 </script>
-<script src="js/zbll-data.js?v=202611141000"></script>
-<script src="js/f2l-data.js?v=202611141000"></script>
-<script src="js/solver.js?v=202611141000"></script>
-<script src="js/cube3d.js?v=202611141000"></script>
-<script src="js/hands3d.js?v=202611141000"></script>
-<script src="js/i18n.js?v=202611141000"></script>
-<script src="js/app.js?v=202611141000"></script>
+<script src="js/zbll-data.js?v=202611141300"></script>
+<script src="js/f2l-data.js?v=202611141300"></script>
+<script src="js/solver.js?v=202611141300"></script>
+<script src="js/cube3d.js?v=202611141300"></script>
+<script src="js/hands3d.js?v=202611141300"></script>
+<script src="js/i18n.js?v=202611141300"></script>
+<script src="js/app.js?v=202611141300"></script>
 </body>
 </html>

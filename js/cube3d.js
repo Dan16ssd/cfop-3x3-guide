@@ -75,6 +75,7 @@
           const n = [0, 0, 0]; n[a] = home[a];
           const face = faceOf(n);
           const m = new THREE.Mesh(this.stickerGeo, this.mats[FACE_COLOR[face]]);
+          m.userData.hn = n;
           m.position.set(n[0] * 0.487, n[1] * 0.487, n[2] * 0.487);
           m.lookAt(n[0] * 2, n[1] * 2, n[2] * 2);
           g.add(m);
@@ -118,6 +119,7 @@
       const v = a => new THREE.Vector3(a[0], a[1], a[2]);
       for (const g of this.cubies) {
         const st = model.filter(s => eq(s.h, g.userData.home));
+        for (const m of g.children) if (m.userData.hn) { const s = st.find(q => eq(q.hn, m.userData.hn)); if (s && this.mats[s.c] && m.material !== this.mats[s.c]) m.material = this.mats[s.c]; }
         g.position.copy(v(st[0].p));
         if (st.length >= 2) {
           const h1 = v(st[0].hn), h2 = v(st[1].hn), h3 = h1.clone().cross(h2);
