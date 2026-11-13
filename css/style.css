@@ -539,3 +539,26 @@ nav.bar .brand img{width:26px;height:26px}
 .rc-wk small{font-family:var(--mono);opacity:.75;font-size:.72rem}
 .rc-keys{font-size:.8rem;margin-top:12px}
 @media (max-width:640px){.rc-main{grid-template-columns:1fr}.rc-dia svg{max-width:200px}}
+
+/* vs friend */
+.vs-scr{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;margin:14px 0;padding:14px;border-radius:var(--r);background:var(--glass),var(--surface);border:1px solid rgba(255,255,255,.08)}
+.vs-scr .scr{flex:1 1 300px;text-align:center}
+.vs{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:stretch}
+.vs-mid{align-self:center;font-family:var(--display);font-weight:900;font-size:1.4rem;color:var(--yellow);text-shadow:0 0 18px rgba(255,210,63,.45)}
+.vs-p{display:grid;gap:10px;align-content:start;padding:12px;border-radius:var(--r);background:var(--glass),var(--surface);border:1px solid rgba(255,255,255,.08);transition:box-shadow .3s,border-color .3s}
+.vs-p.won{border-color:var(--yellow);box-shadow:0 0 0 2px var(--yellow),0 0 30px rgba(255,210,63,.3)}
+.vs-head{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.vs-name{flex:1;min-width:0;font:inherit;font-weight:800;font-size:1.05rem;color:var(--fg);background:transparent;border:1px dashed rgba(255,255,255,.2);border-radius:8px;padding:6px 8px}
+.vs-name:focus{border-style:solid;border-color:var(--accent);outline:none;background:rgba(0,0,0,.2)}
+.vs-wins{font-family:var(--mono);font-size:.8rem;white-space:nowrap;opacity:.85}
+.vs-pad{display:grid;place-items:center;gap:6px;min-height:clamp(150px,30vh,260px);padding:12px;border-radius:var(--r);cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none;background:radial-gradient(circle at 50% 0%,#1b2552,#0b1129);border:1px solid rgba(255,255,255,.07)}
+.vs-clock{font-family:var(--mono);font-weight:700;font-variant-numeric:tabular-nums;font-size:clamp(2rem,7vw,4.2rem);color:#fff}
+.vs-hint{font-size:.78rem;opacity:.65;text-align:center}
+.vs-pad.hold .vs-clock{color:var(--warn)}
+.vs-pad.ready .vs-clock{color:var(--ok);text-shadow:0 0 30px rgba(47,210,122,.6)}
+.vs-pad.run{border-color:rgba(77,124,255,.5)}
+.vs-pen{display:flex;gap:8px;justify-content:center}
+.vs-pen button[aria-pressed="true"]{background:#ff5a5a;border-color:#ff5a5a;color:#fff}
+.vs-result{text-align:center;font-size:1.15rem;margin:14px 0 4px}
+.vs-win{color:var(--yellow);font-weight:800}
+@media (max-width:640px){.vs{grid-template-columns:1fr 1fr}.vs-mid{display:none}.vs-p{padding:8px}.vs-name{font-size:.92rem}}
