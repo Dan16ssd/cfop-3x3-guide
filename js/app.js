@@ -800,17 +800,26 @@ function initXT(){
   const ensureCube=()=>{if(cube||!window.THREE||!window.Cube3D)return cube;try{cube=new Cube3D($('xtCube'),{speed:220,touch:'none'});}catch(e){cube=null;}return cube;};
   const show=(m)=>{if(!ensureCube())return;cube.clear();cube.model=m;cube.sync(m);};
   const play=(m,moves)=>{if(!ensureCube())return;cube.clear();cube.model=m;cube.sync(m);for(const mv of moves){applyMove(m,mv);cube.model=m;cube.enqueue(mv);}};
-  function genEC(slot){
-    for(let tries=0;tries<30;tries++){const seq=[];for(let i=0;i<6;i++){const u=AUFS[xtR(4)];if(u)seq.push(u);seq.push(EC_INS[slot][xtR(6)]);}
-      const gen=seq.join(' ');const scr=scrambleOf(gen);const m=solved();applyAlg(m,scr);
-      if(!slotsOK(m).includes(slot)&&!edgesOriented(m))return scr.split(' ');}
-    return null;}
+  /* merge moves on the same face: R R2 -> R', U U' -> nothing */
+  const simplify=toks=>{const out=[];const amt=t=>t.endsWith("'")?3:t.endsWith('2')?2:1;
+    for(const t of toks){const f=t[0];if(out.length&&out[out.length-1][0]===f){const a=(amt(out.pop())+amt(t))%4;if(a)out.push(f+['',"",'2',"'"][a]);}else out.push(t);}
+    return out;};
+  /* short scramble from a solved cube: a few slot inserts with U turns between them, reversed and simplified.
+     Keeps the cross; `ok` says whether the result is a valid case. Prefers 6-11 move scrambles. */
+  function genShort(slots,chunks,ok){
+    let best=null;
+    for(let tries=0;tries<120;tries++){const seq=[];
+      for(let i=0;i<chunks;i++){const u=AUFS[xtR(4)];if(u&&i)seq.push(u);seq.push(...EC_INS[slots[i%slots.length]][xtR(6)].split(' '));}
+      if(xtR(2))seq.push(AUFS[1+xtR(3)]);
+      const scr=simplify(scrambleOf(seq.join(' ')).split(' '));const m=solved();applyAlg(m,scr.join(' '));
+      if(!crossOK(m)||!ok(m))continue;
+      if(scr.length>=6&&scr.length<=11)return scr;
+      if(scr.length>=5&&(!best||scr.length<best.length))best=scr;}
+    return best;}
+  const genEC=slot=>genShort([slot],2+xtR(2),m=>!slotsOK(m).includes(slot)&&!edgesOriented(m)&&slotsOK(m).length===3);
   /* cross + all slots except `slots` solved */
-  function genSlots(slots){
-    for(let tries=0;tries<60;tries++){const seq=[];for(let i=0;i<7;i++){const u=AUFS[xtR(4)];if(u)seq.push(u);seq.push(EC_INS[xtPick(slots)][xtR(6)]);}
-      const scr=scrambleOf(seq.join(' '));const m=solved();applyAlg(m,scr);const ok=slotsOK(m);
-      if(crossOK(m)&&slots.every(x=>!ok.includes(x))&&ok.length===4-slots.length)return scr.split(' ');}
-    return null;}
+  const genSlots=slots=>genShort(slots.length>1?(xtR(2)?slots:slots.slice().reverse()):slots,slots.length>1?3+xtR(2):2+xtR(2),
+    m=>{const ok=slotsOK(m);return slots.every(x=>!ok.includes(x))&&ok.length===4-slots.length;});
   async function newCase(){
     clearInterval(timer);$('xtClock').textContent='15';$('xtClock').className='xt-clock';
     $('xtOut').replaceChildren();$('xtAns').value='';$('xtCheckOut').replaceChildren();$('xtHintOut').replaceChildren();hintLv=0;
