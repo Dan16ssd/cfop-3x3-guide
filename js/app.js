@@ -284,9 +284,9 @@ function initTimer(){
   let state='idle',t0=0,raf=0,holdT=0;
   const newScr=()=>{scr.textContent=makeScramble();};newScr();
   const tick=()=>{clock.textContent=((performance.now()-t0)/1000).toFixed(2);raf=requestAnimationFrame(tick);};
-  const down=()=>{if(state==='running'){cancelAnimationFrame(raf);const t=performance.now()-t0;clock.textContent=(t/1000).toFixed(2);const pb=times.length>0&&t<Math.min(...times);times.push(Math.round(t));drawTimes();showRank(Math.round(t),pb);newScr();state='stopped';return;}
+  const down=()=>{if(window.extTimer)return;if(state==='running'){cancelAnimationFrame(raf);const t=performance.now()-t0;clock.textContent=(t/1000).toFixed(2);const pb=times.length>0&&t<Math.min(...times);times.push(Math.round(t));drawTimes();showRank(Math.round(t),pb);newScr();state='stopped';return;}
     if(state==='idle'||state==='done'){state='holding';clock.className='clock hold';holdT=setTimeout(()=>{if(state==='holding'){state='ready';clock.className='clock ready';clock.textContent='0.00';}},300);}};
-  const up=()=>{if(state==='stopped'){state='done';return;}if(state==='holding'){clearTimeout(holdT);state='idle';clock.className='clock';}
+  const up=()=>{if(window.extTimer)return;if(state==='stopped'){state='done';return;}if(state==='holding'){clearTimeout(holdT);state='idle';clock.className='clock';}
     else if(state==='ready'){state='running';clock.className='clock';t0=performance.now();tick();}};
   /* space never scrolls the page or presses a focused button while the timer page is open */
   const typing=e=>['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)||e.target.isContentEditable||document.querySelector('dialog[open]');
@@ -298,6 +298,9 @@ function initTimer(){
   document.getElementById('newScr').onclick=newScr;
   document.getElementById('scrToPg').onclick=()=>{pg=solved();applyAlg(pg,'z2 '+scr.textContent+' z2');queue=[];qi=0;drawPg();drawSteps();status(L('Timer scramble loaded (scrambled white-top, shown white-bottom).'));pgNavShow({from:curPage()});go('playground');};
   document.getElementById('delLast').onclick=()=>{times.pop();drawTimes();};
+  /* smart cubes and pro timers (smart.js) save their solves through this */
+  window.TIMER={clock,scr,newScr,record:t=>{t=Math.round(t);const pb=times.length>0&&t<Math.min(...times);times.push(t);drawTimes();showRank(t,pb);
+    clock.className='clock';clock.textContent=(t/1000).toFixed(2);state='done';newScr();}};
   let armed=false;const cl=document.getElementById('clearTimes');cl.onclick=()=>{if(!armed){armed=true;cl.textContent=L('Click again to clear');setTimeout(()=>{armed=false;cl.textContent=L('Clear session');},2500);return;}times=[];drawTimes();armed=false;cl.textContent=L('Clear session');};
   drawTimes();
 }

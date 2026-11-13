@@ -19,7 +19,11 @@ function scBuild(faces){
   for(const c of 'WYGBRO')if(cnt[c]!==9)err.push(['count',c,cnt[c]||0]);
   if(err.length)return {err};
   const st=[];for(const f of SC_FACES)for(let i=0;i<9;i++)st.push({p:scPos(f,i),n:f.n.slice(),c:faces[f.k][i]});
-  const ref=solved(),byP=new Map();
+  return scHome(st);
+}
+/* give every sticker its home (h, hn) from its colors, and check the cube can be solved */
+function scHome(st){
+  const err=[],ref=solved(),byP=new Map();
   for(const s of st){const k=s.p.join();(byP.get(k)||byP.set(k,[]).get(k)).push(s);}
   const refP=new Map();for(const s of ref){const k=s.h.join();(refP.get(k)||refP.set(k,[]).get(k)).push(s);}
   const used=new Map();
