@@ -579,14 +579,14 @@ function solveLL(s){
 }
 const conjZ2=sc=>sc.trim().split(/\s+/).filter(Boolean).map(t=>({U:'D',D:'U',R:'L',L:'R'}[t[0]]||t[0])+t.slice(1));
 let solverWorker=null;
-function runF2L(moves){
+function runF2L(moves,opt){
   return new Promise((res,rej)=>{
     try{if(!solverWorker&&window.Worker&&location.protocol!=='file:')solverWorker=new Worker('js/solver.js?v='+SOLVER_V);}catch(e){solverWorker=null;}
-    if(solverWorker){const id=Math.random();const h=e=>{if(e.data.id!==id)return;solverWorker.removeEventListener('message',h);e.data.error?rej(new Error(e.data.error)):res(e.data.plans);};solverWorker.addEventListener('message',h);solverWorker.postMessage({id,moves});}
-    else setTimeout(()=>{try{res(CFOPSolver.solveF2L(moves));}catch(e){rej(e);}},30);
+    if(solverWorker){const id=Math.random();const h=e=>{if(e.data.id!==id)return;solverWorker.removeEventListener('message',h);e.data.error?rej(new Error(e.data.error)):res(e.data.plans);};solverWorker.addEventListener('message',h);solverWorker.postMessage({id,moves,opt:opt||{}});}
+    else setTimeout(()=>{try{res(CFOPSolver.solveF2L(moves,opt||{}));}catch(e){rej(e);}},30);
   });
 }
-const SOLVER_V='202611141000';
+const SOLVER_V='202611142100';
 const htm=str=>str&&str.trim()?str.trim().split(/\s+/).filter(t=>!/^[xyz]/.test(t)).length:0;
 const KIND_NAME={cross:'Cross',xcross:'X-cross',xxcross:'XX-cross'};
 async function solveScramble(sc){

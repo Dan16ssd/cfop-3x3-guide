@@ -166,7 +166,8 @@
   function solveF2L(tokens, opt = {}) {
     const ids = tokens.map(t => MV.findIndex(m => m.t === t));
     if (ids.some(i => i < 0)) throw new Error('bad move');
-    const s0 = stateFrom(ids);
+    const s0 = opt.pieces ? opt.pieces.map(([p, n], i) => (i >= 4 && i < 8 ? cid : eid)(p, n)) : stateFrom(ids);
+    if (s0.some(v => v === undefined)) throw new Error('bad state');
     const budget = opt.budget || 4e6;
     const plans = [];
     // plain cross
