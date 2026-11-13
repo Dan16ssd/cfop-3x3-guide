@@ -711,14 +711,20 @@ function initRecog(){
   const HOW={name:'Look at the case and pick its name as fast as you can. Your time is measured.',
     alg:'Look at the case and say or do its algorithm. Then reveal and be honest: did you remember it?',
     pic:'Read the algorithm and pick the case it solves. This links the moves to the picture in your memory.'};
-  let cfg={sets:['2oll','2pll'],mode:'name',learned:false};try{Object.assign(cfg,JSON.parse(localStorage.getItem('cfop-rccfg'))||{});}catch(e){}
+  let cfg={sets:['2oll','2pll'],mode:'name',learned:false,view:'auto'};try{Object.assign(cfg,JSON.parse(localStorage.getItem('cfop-rccfg'))||{});}catch(e){}
   let db={};try{db=JSON.parse(localStorage.getItem('cfop-recog'))||{};}catch(e){}
   const save=()=>{try{localStorage.setItem('cfop-recog',JSON.stringify(db));localStorage.setItem('cfop-rccfg',JSON.stringify(cfg));}catch(e){}};
   const ALL=RC_SETS.map(([k,lab,f])=>[k,lab,f()]);
   const rnd=a=>a[Math.floor(Math.random()*a.length)];
   const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
   const AUFX={U:"U'",U2:'U2',"U'":'U'};
-  const sets=$('rcSets'),modes=$('rcModes'),box=$('rcDia'),q=$('rcQ'),how=$('rcHow'),opts=$('rcOpts'),ans=$('rcAns'),btns=$('rcBtns'),lc=$('rcLearned');
+  /* 3D view: you see the top and two sides, like holding a real cube */
+  const M3={pll:null,pllc:st=>!(st.h[1]===1&&nz(st.h)===2&&st.n[1]!==1),oll:st=>st.h[1]!==1||st.c==='Y',
+    olle:st=>st.h[1]!==1||(nz(st.h)<=2&&st.c==='Y'),coll:st=>st.h[1]!==1||nz(st.h)===3||st.c==='Y'};
+  const is3d=it=>cfg.view==='3d'||(cfg.view==='auto'&&(it.mode==='pll'||it.mode==='pllc'));
+  const D=(it,pre)=>{const s=caseOf(it.alg,pre);return is3d(it)?isoDiagram(s,M3[it.mode]):llDiagram(s,it.mode);};
+  const VIEWS=[['auto','Auto: PLL in 3D'],['3d','All in 3D'],['top','Top view']];
+  const sets=$('rcSets'),modes=$('rcModes'),views=$('rcViews'),box=$('rcDia'),q=$('rcQ'),how=$('rcHow'),opts=$('rcOpts'),ans=$('rcAns'),btns=$('rcBtns'),lc=$('rcLearned');
   let pool=[],cur=null,curOpts=[],phase='ask',t0=0,last=null,forced=null,ses={n:0,ok:0,streak:0,best:0,t:[]};
   const known=r=>r&&r.st>=3;
   const weight=it=>{const r=db[it.id];if(!r||!r.n)return 4;return (1+4*(1-r.ok/r.n))/(1+r.st)+(r.t>3000?.5:0);};
@@ -732,6 +738,8 @@ function initRecog(){
   const drawSets=()=>{sets.replaceChildren(...ALL.map(([k,lab,l])=>{const b=document.createElement('button');b.type='button';b.className='rc-chip';b.setAttribute('aria-pressed',cfg.sets.includes(k));
     const kn=l.filter(x=>known(db[x.id])).length;b.innerHTML=`${L(lab)} <span class="cnt">${kn}/${l.length}</span>`;
     b.onclick=()=>{cfg.sets=cfg.sets.includes(k)?cfg.sets.filter(x=>x!==k):[...cfg.sets,k];save();drawSets();next();};return b;}));};
+  const drawViews=()=>{views.replaceChildren(...VIEWS.map(([k,lab])=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','tab');b.setAttribute('aria-selected',cfg.view===k);b.textContent=L(lab);
+    b.onclick=()=>{cfg.view=k;save();drawViews();next();};return b;}));};
   const drawModes=()=>{modes.replaceChildren(...MODES.map(([k,lab])=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','tab');b.setAttribute('aria-selected',cfg.mode===k);b.textContent=L(lab);
     b.onclick=()=>{cfg.mode=k;save();drawModes();next();};return b;}));how.textContent=L(HOW[cfg.mode]);};
   const drawStats=()=>{const kn=pool.filter(x=>known(db[x.id])).length,avg=ses.t.length?(ses.t.reduce((a,b)=>a+b,0)/ses.t.length/1000).toFixed(2)+' s':'–';
@@ -755,7 +763,7 @@ function initRecog(){
     [...opts.children].forEach((b,j)=>{b.disabled=true;if(curOpts[j]===cur)b.classList.add('ok');else if(j===i)b.classList.add('bad');});
     record(ok,ms);
     ans.innerHTML=`<div class="rc-res ${ok?'ok':'bad'}">${ok?'✓ '+L('Right!'):'✗ '+L('Not this one.')} <span class="muted">${(ms/1000).toFixed(2)} s</span></div>`+algHTML();
-    if(cfg.mode==='pic')box.replaceChildren(llDiagram(caseOf(cur.alg,cur.pre),cur.mode));
+    if(cfg.mode==='pic')box.replaceChildren(D(cur,cur.pre));
     doneBtns();};
   const reveal=()=>{if(phase!=='ask'||cfg.mode!=='alg')return;const ms=performance.now()-t0;phase='grade';
     ans.innerHTML=`<div class="muted rc-t">${L('Recall time')}: ${(ms/1000).toFixed(2)} s</div>`+algHTML();
@@ -769,9 +777,9 @@ function initRecog(){
     if(cfg.mode==='pic'){
       q.innerHTML=`<div class="muted">${L('Which case does this algorithm solve?')}</div><code class="rc-alg">${cur.alg}</code>`;
       curOpts=options(cur);opts.className='rc-opts pics';
-      curOpts.forEach((o,i)=>{const b=document.createElement('button');b.type='button';b.innerHTML=`<kbd>${i+1}</kbd>`;b.appendChild(llDiagram(caseOf(o.alg,o===cur?cur.pre:rnd(AUFS)),o.mode));b.onclick=()=>answer(i);opts.appendChild(b);});
+      curOpts.forEach((o,i)=>{const b=document.createElement('button');b.type='button';b.innerHTML=`<kbd>${i+1}</kbd>`;b.appendChild(D(o,o===cur?cur.pre:rnd(AUFS)));b.onclick=()=>answer(i);opts.appendChild(b);});
     }else{
-      box.appendChild(llDiagram(caseOf(cur.alg,cur.pre),cur.mode));
+      box.appendChild(D(cur,cur.pre));if(is3d(cur))box.insertAdjacentHTML('beforeend',`<p class="muted rc-3dnote">${L('Like a real cube: you only see the front and right sides.')}</p>`);
       if(cfg.mode==='name'){q.innerHTML=`<div class="muted">${L('Which case is this?')}</div>`;curOpts=options(cur);opts.className='rc-opts';
         curOpts.forEach((o,i)=>{const b=document.createElement('button');b.type='button';b.innerHTML=`<kbd>${i+1}</kbd> ${o.name}`;b.onclick=()=>answer(i);opts.appendChild(b);});}
       else{q.innerHTML=`<div class="muted">${L('What is the algorithm? Say it or do it, then reveal.')}</div>`;btns.replaceChildren(btn(L('Reveal'),'primary',reveal));}
@@ -788,7 +796,7 @@ function initRecog(){
     else if(phase==='ask'&&cfg.mode==='alg'&&(k===' '||k==='enter')){e.preventDefault();reveal();}
     else if(phase==='grade'&&(k==='g'||k==='m')){e.preventDefault();btns.querySelector(k==='g'?'.rc-g':'.rc-m').click();}
     else if(phase==='done'&&(k===' '||k==='enter'||k==='n'||k==='arrowright')){e.preventDefault();next();}});
-  drawSets();drawModes();
+  drawSets();drawModes();drawViews();
   let started=false;const io=new IntersectionObserver(es=>{if(!started&&es.some(e=>e.isIntersecting)){started=true;next();}});io.observe(page.querySelector('.rc-main'));
 }
 

@@ -632,3 +632,7 @@ nav.bar .brand img{width:26px;height:26px}
 .ln-btns{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
 .ln-btns .ln-go{min-width:150px;min-height:46px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
 @media (max-width:520px){.ln-co .coach{width:64px}.ln-bub{font-size:.95rem}.ln-btns .ln-go{flex:1}}
+
+.rc-views{margin-top:0}.rc-views button{font-size:.8rem;padding:4px 12px}
+.rc-3dnote{font-size:.78rem;text-align:center;margin:6px 0 0}
+.rc-weak p{grid-column:1/-1}
