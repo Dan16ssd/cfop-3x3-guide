@@ -678,6 +678,105 @@ function initPages(){
   document.querySelectorAll('.stage[data-go]').forEach(st=>{st.tabIndex=0;st.onclick=()=>go(st.dataset.go);st.onkeydown=e=>{if(e.key==='Enter')go(st.dataset.go);};});
   addEventListener('hashchange',route);route();
 }
+/* ---------- X-cross / XX-cross / edge control trainer ---------- */
+function workerCall(msg){
+  return new Promise((res,rej)=>{
+    try{if(!solverWorker&&window.Worker&&location.protocol!=='file:')solverWorker=new Worker('js/solver.js?v='+SOLVER_V);}catch(e){solverWorker=null;}
+    if(solverWorker){const id=Math.random();const h=e=>{if(e.data.id!==id)return;solverWorker.removeEventListener('message',h);e.data.error?rej(new Error(e.data.error)):res(e.data);};solverWorker.addEventListener('message',h);solverWorker.postMessage({...msg,id});}
+    else setTimeout(()=>{try{res(msg.cmd==='ec'?{ec:CFOPSolver.solveEC(msg.moves,msg.budget||2e7)}:{report:CFOPSolver.startReport(msg.moves,msg.need,msg.budget||2e7)});}catch(e){rej(e);}},30);
+  });
+}
+const XT_MODES=[['cross','Cross',0],['xcross','X-cross',1],['xxcross','XX-cross',2],['ec','Edge control',1]];
+const XT_TARGETS={
+  cross:[['any','White cross']],
+  xcross:[['any','Best slot'],['FR','FR'],['FL','FL'],['BR','BR'],['BL','BL']],
+  xxcross:[['any','Best pair'],['FR+FL','FR + FL'],['BR+BL','BR + BL'],['FR+BR','FR + BR'],['FL+BL','FL + BL'],['FL+BR','FL + BR (diagonal)'],['FR+BL','FR + BL (diagonal)']],
+  ec:[['FR','FR'],['FL','FL'],['BR','BR'],['BL','BL']]
+};
+const EC_INS={FR:["R U R'","R U' R'","R U2 R'","F' U F","F' U' F","F' U2 F"],FL:["L' U L","L' U' L","L' U2 L","F U F'","F U' F'","F U2 F'"],
+  BR:["R' U R","R' U' R","R' U2 R","B U B'","B U' B'","B U2 B'"],BL:["L U L'","L U' L'","L U2 L'","B' U B","B' U' B","B' U2 B'"]};
+/* count solved things relative to centers (works with any notation the user types) */
+function crossOK(s){return okBy(s,st=>st.p[1]===-1&&nz(st.p)===2);}
+function slotsOK(s){const out=[];for(const [n,x,z] of [['FR',1,1],['FL',-1,1],['BR',1,-1],['BL',-1,-1]])if(okBy(s,st=>(eq(st.p,[x,-1,z])||eq(st.p,[x,0,z]))))out.push(n);return out;}
+function initXT(){
+  const host=document.getElementById('xtrainer');if(!host)return;
+  const $=id=>document.getElementById(id);
+  let mode='xcross',target='any',cur=null,cube=null,timer=0,stats={};
+  try{stats=JSON.parse(localStorage.getItem('cfop-xt')||'{}');}catch(e){}
+  try{mode=localStorage.getItem('cfop-xt-mode')||'xcross';}catch(e){}
+  const save=()=>{try{localStorage.setItem('cfop-xt',JSON.stringify(stats));localStorage.setItem('cfop-xt-mode',mode);}catch(e){}};
+  const tabs=$('xtTabs');
+  XT_MODES.forEach(([k,label])=>{const b=document.createElement('button');b.dataset.set=k;b.setAttribute('role','tab');b.textContent=L(label);b.onclick=()=>{mode=k;target=XT_TARGETS[k][0][0];drawTabs();newCase();};tabs.appendChild(b);});
+  const drawTabs=()=>{[...tabs.children].forEach(b=>b.setAttribute('aria-selected',b.dataset.set===mode));
+    $('xtTarget').innerHTML=XT_TARGETS[mode].map(([v,l])=>`<option value="${v}"${v===target?' selected':''}>${L(l)}</option>`).join('');
+    $('xtHow').textContent=L({cross:'Plan the whole white cross in inspection, then check your answer.',xcross:'Plan the cross plus one F2L pair (X-cross) in inspection.',xxcross:'Plan the cross plus two pairs (XX-cross). Hard: take your time at first.',ec:'Cross and 3 pairs are solved. Insert the last pair so that all 4 yellow edges end up oriented (yellow facing up).'}[mode]);
+    drawStats();};
+  $('xtTarget').onchange=e=>{target=e.target.value;newCase();};
+  const st=()=>stats[mode]||(stats[mode]={n:0,opt:0,ok:0,diff:0});
+  const drawStats=()=>{const s=st();$('xtStats').innerHTML=`<span>${L('Cases')} <b>${s.n}</b></span><span>${L('Optimal')} <b>${s.opt}</b></span><span>${L('Solved')} <b>${s.ok}</b></span><span>${L('Avg extra moves')} <b>${s.ok?(s.diff/s.ok).toFixed(1):'–'}</b></span>`;};
+  const toks3d=()=>cur.mode==='ec'?cur.toks:cur.sc.split(' ');
+  const startModel=()=>{const m=solved();if(cur.mode!=='ec')applyAlg(m,'z2');return m;};
+  const scrambledModel=()=>{const m=solved();applyAlg(m,cur.mode==='ec'?cur.toks.join(' '):'z2 '+cur.sc+' z2');return m;};
+  const ensureCube=()=>{if(cube||!window.THREE||!window.Cube3D)return cube;try{cube=new Cube3D($('xtCube'),{speed:220,touch:'none'});}catch(e){cube=null;}return cube;};
+  const show=(m)=>{if(!ensureCube())return;cube.clear();cube.model=m;cube.sync(m);};
+  const play=(m,moves)=>{if(!ensureCube())return;cube.clear();cube.model=m;cube.sync(m);for(const mv of moves){applyMove(m,mv);cube.model=m;cube.enqueue(mv);}};
+  function genEC(slot){
+    for(let tries=0;tries<30;tries++){const seq=[];for(let i=0;i<6;i++){const u=AUFS[Math.floor(Math.random()*4)];if(u)seq.push(u);seq.push(EC_INS[slot][Math.floor(Math.random()*6)]);}
+      const gen=seq.join(' ');const scr=scrambleOf(gen);const m=solved();applyAlg(m,scr);
+      if(!slotsOK(m).includes(slot)&&!edgesOriented(m))return scr.split(' ');}
+    return null;}
+  async function newCase(){
+    clearInterval(timer);$('xtClock').textContent='15';$('xtClock').className='xt-clock';
+    $('xtOut').replaceChildren();$('xtAns').value='';$('xtCheckOut').replaceChildren();
+    if(mode==='ec'){const toks=genEC(target);cur={mode,toks,sc:toks.join(' '),target};
+      $('xtScr').textContent=cur.sc;$('xtHold').textContent=L('Hold white on the bottom and green in front, then do this scramble from a solved cube.');}
+    else{const sc=makeScramble();cur={mode,sc,toks:conjZ2(sc),target};$('xtScr').textContent=sc;$('xtHold').textContent=L('Scramble with white on top and green in front (WCA). Then hold white on the bottom to solve.');}
+    show(scrambledModel());
+    const my=cur;my.p=(mode==='ec'?workerCall({cmd:'ec',moves:my.toks}):workerCall({cmd:'start',moves:my.toks,need:XT_MODES.find(x=>x[0]===mode)[2]})).then(r=>{my.r=r;return r;});
+    st().n++;save();drawStats();
+  }
+  function optimalFor(){const r=cur.r;if(!r)return null;
+    if(cur.mode==='ec')return r.ec&&r.ec.ec;
+    if(cur.target==='any')return r.report.best&&r.report.best.moves;
+    const p=r.report.per.find(x=>x.slots.slice().sort().join('+')===cur.target.split('+').sort().join('+'));return p&&p.r&&p.r.moves;}
+  async function reveal(){
+    clearInterval(timer);const out=$('xtOut');out.innerHTML=`<p class="muted sol-wait">${L('Finding the optimal solution…')}</p>`;
+    let r;try{r=await cur.p;}catch(e){out.innerHTML=`<p class="status err">${e.message}</p>`;return;}
+    const mv=a=>a&&a.length?a.join(' '):'–';
+    let html='';
+    if(cur.mode==='ec'){const e=r.ec;
+      html=`<div class="sol-sum"><div><b>${e.ec?e.ec.length:'–'}</b><span>${L('edge control insert')}</span></div><div><b>${e.plain?e.plain.length:'–'}</b><span>${L('plain insert')}</span></div><div><b>${e.slot}</b><span>${L('slot')}</span></div></div>
+      <ol class="sol-steps"><li class="ll"><span class="lbl">${L('Edge control')}</span><code>${mv(e.ec)}</code><small>${L('pair + all edges oriented → ZBLL')}</small></li><li><span class="lbl">${L('Plain insert')}</span><code>${mv(e.plain)}</code><small>${L('pair only')}</small></li></ol>`;}
+    else{const rep=r.report,best=optimalFor();
+      html=`<div class="sol-sum"><div><b>${best?best.length:'–'}</b><span>${L('optimal moves')}</span></div><div><b>${rep.best?rep.best.moves.length:'–'}</b><span>${L('best of any slot')}</span></div><div><b>${rep.best&&rep.best.slots.length?rep.best.slots.join('+'):'–'}</b><span>${L('best slot')}</span></div></div>
+      <ol class="sol-steps"><li><span class="lbl">${L('Inspection')}</span><code>z2</code><small>${L('white on the bottom')}</small></li><li class="ll"><span class="lbl">${L({cross:'Cross',xcross:'X-cross',xxcross:'XX-cross'}[cur.mode])}${cur.target!=='any'?' ('+cur.target+')':''}</span><code>${mv(best)}</code><small>${Lt('moves',best?best.length:0)}</small></li></ol>
+      ${rep.per.length?`<div class="xt-per">${rep.per.map(p=>`<span class="${p.r&&best&&p.r.moves.length===Math.min(...rep.per.filter(q=>q.r).map(q=>q.r.moves.length))?'on':''}">${p.slots.join(' + ')} <b>${p.r?p.r.moves.length:'>'}</b></span>`).join('')}</div>`:''}`;}
+    out.innerHTML=html+`<div class="algline"><button class="primary" id="xtPlay">${L('Play on 3D')}</button></div>`;
+    $('xtPlay').onclick=()=>{const sol=cur.mode==='ec'?r.ec.ec:optimalFor();if(sol)play(scrambledModel(),parse(sol.join(' ')));};
+  }
+  function check(){
+    const out=$('xtCheckOut');const txt=$('xtAns').value.trim();if(!txt)return;
+    let ms;try{ms=parse(txt);}catch(e){out.innerHTML=`<p class="status err">${e.message}</p>`;return;}
+    const m=scrambledModel();applyAlg(m,txt);
+    const n=htm(txt),cr=crossOK(m),sl=slotsOK(m);
+    let ok,msg;
+    if(cur.mode==='ec'){ok=sl.length===4&&edgesOriented(m);msg=ok?L('Pair inserted and all edges oriented!'):sl.length<4?L('The last pair is not solved.'):L('Pair solved, but not all yellow edges are oriented.');}
+    else{const need=XT_MODES.find(x=>x[0]===cur.mode)[2];const want=cur.target==='any'?null:cur.target.split('+');
+      ok=cr&&(want?want.every(w=>sl.includes(w)):sl.length>=need);
+      msg=!cr?L('The cross is not solved.'):ok?Lt('xtSolved',sl.length?sl.join(' + '):'—'):L('Cross solved, but not the pair(s) you were asked for.');}
+    out.innerHTML=`<p class="status ${ok?'good':'err'}">${msg} ${Lt('moves',n)}.</p>`;
+    play(scrambledModel(),ms);
+    if(ok){const s=st();s.ok++;cur.p.then(()=>{const best=optimalFor();if(best){const d=Math.max(0,n-best.length);s.diff+=d;if(d===0)s.opt++;out.insertAdjacentHTML('beforeend',`<p class="muted">${d===0?L('That is optimal!'):Lt('xtExtra',d,best.length)}</p>`);}save();drawStats();});}
+  }
+  $('xtNew').onclick=newCase;$('xtReveal').onclick=reveal;$('xtCheck').onclick=check;
+  $('xtAns').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();check();}};
+  $('xtWatch').onclick=()=>{if(!cur)return;const m=startModel();const moves=parse(cur.mode==='ec'?cur.sc:cur.sc+' z2');play(m,moves);};
+  $('xtInspect').onclick=()=>{clearInterval(timer);let t=15;const c=$('xtClock');c.textContent=t;c.className='xt-clock run';
+    timer=setInterval(()=>{t--;c.textContent=t>0?t:L('Go!');if(t<=3)c.className='xt-clock warn';if(t<=0){clearInterval(timer);c.className='xt-clock done';}},1000);};
+  drawTabs();
+  const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)&&!cur){newCase();}});io.observe(host);
+}
+
 /* ---------- boot ---------- */
 applyStatic();
 renderF2L();
@@ -686,6 +785,6 @@ renderLL(OLLC,'ollcCards','oll','ollc');
 renderLL(PLLC,'pllcCards','pllc','pllc','corners');
 renderLL(PLLE,'plleCards','pll','plle','all');
 initHero();
-renderFull();renderCOLL();initZB();initAF2L();initSolver();initPages();
+renderFull();renderCOLL();initZB();initAF2L();initSolver();initXT();initPages();
 initPg();initTimer();initDrills();initFT();initQuiz();updateProgress();
 

@@ -437,3 +437,21 @@ nav.bar .brand img{width:26px;height:26px}
 .sol-steps code span{display:inline-block}
 .scr,.scr-line code,.card .alg{overflow-wrap:anywhere}
 .dlg{overflow-x:hidden}
+
+/* X-cross trainer */
+.xt{display:grid;gap:12px;margin-top:14px;padding:16px;border-radius:var(--r);background:var(--glass),var(--surface);border:1px solid rgba(255,255,255,.08)}
+.xt-top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.xt-sel{display:flex;gap:8px;align-items:center}
+.xt-hold{font-size:.82rem;text-align:center}
+.xt-main{display:grid;grid-template-columns:280px 1fr;gap:18px;align-items:start}
+.xt-view{display:grid;gap:8px;justify-items:center}
+.xt-side{display:grid;gap:10px;min-width:0}
+.xt-clock{font:700 2.6rem var(--mono);text-align:center;padding:6px;border-radius:12px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.07)}
+.xt-clock.run{color:var(--ok)}.xt-clock.warn{color:var(--warn)}.xt-clock.done{color:var(--s-pll)}
+#xtAns{flex:1 1 200px;min-width:0;resize:none;font:500 .92rem/1.5 var(--mono);padding:8px 10px;border-radius:10px;border:1px solid #2c3766;background:#0a1028;color:var(--fg)}
+.status.good{color:var(--ok)}
+.xt-per{display:flex;flex-wrap:wrap;gap:6px;font-size:.82rem}
+.xt-per span{padding:3px 10px;border-radius:99px;border:1px solid var(--line)}
+.xt-per span.on{border-color:var(--ok);color:var(--ok)}
+#xtOut{display:grid;gap:10px}
+@media (max-width:620px){.xt-main{grid-template-columns:1fr}.xt-view .cube3d{width:min(260px,80vw)}}

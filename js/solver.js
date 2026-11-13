@@ -86,7 +86,8 @@
   const isCross = s => s[0] === CROSS[0] && s[1] === CROSS[1] && s[2] === CROSS[2] && s[3] === CROSS[3];
   const pairOK = (s, k) => s[4 + k] === SLOTS[k].c && s[8 + k] === SLOTS[k].e;
 
-  function search(s0, goal, h, maxDepth, budget) {
+  function search(s0, goal, h, maxDepth, budget, allowed) {
+    const JS = allowed || [...Array(18).keys()];
     const path = []; let nodes = 0;
     const s = s0.slice();
     function dfs(st, g, bound, last) {
@@ -94,7 +95,7 @@
       if (hv === 0 && goal(st)) return true;
       if (g + hv > bound) return false;
       if (++nodes > budget) throw 'budget';
-      for (let j = 0; j < 18; j++) {
+      for (const j of JS) {
         const f = (j / 3) | 0;
         if (last >= 0 && (f === last || ((f >> 1) === (last >> 1) && f < last))) continue;
         const ns = new Array(N);
@@ -116,7 +117,7 @@
 
   // goal: cross + all slots in `keep` + `need` more slots
   const edgesOriented = st => EDGES[st[12]][1][1] === 1 && EDGES[st[13]][1][1] === 1 && EDGES[st[14]][1][1] === 1 && EDGES[st[15]][1][1] === 1;
-  function stage(s, keep, need, maxDepth, budget, ec) {
+  function stage(s, keep, need, maxDepth, budget, ec, allowed) {
     const free = [0, 1, 2, 3].filter(k => !keep.includes(k));
     const h = st => {
       let m = crossH(st);
@@ -125,7 +126,7 @@
       return m;
     };
     const goal = st => isCross(st) && keep.every(k => pairOK(st, k)) && free.filter(k => pairOK(st, k)).length >= need && (!ec || edgesOriented(st));
-    return search(s, goal, h, maxDepth, budget);
+    return search(s, goal, h, maxDepth, budget, allowed);
   }
   const apply = (s, moves) => { const t = s.slice(); for (const j of moves) for (let i = 0; i < N; i++) t[i] = (i >= 4 && i < 8 ? C : E).T[t[i] * 18 + j]; return t; };
   const solvedSlots = s => [0, 1, 2, 3].filter(k => pairOK(s, k));
@@ -222,12 +223,48 @@
     return cases;
   }
 
-  const api = { solveF2L, MV, pairCases };
+  /* optimal cross / X-cross / XX-cross. slots: array of slot names that must be solved (e.g. ['FR']),
+     or need: how many pairs (any slots). Returns {moves, slots} or null if over budget. */
+  function solveStart(tokens, opt = {}) {
+    const ids = tokens.map(t => MV.findIndex(m => m.t === t));
+    if (ids.some(i => i < 0)) throw new Error('bad move');
+    const s0 = stateFrom(ids);
+    const keep = (opt.slots || []).map(n => SLOTS.findIndex(x => x.name === n));
+    const r = stage(s0, keep, keep.length ? 0 : (opt.need || 0), opt.maxDepth || 16, opt.budget || 3e7);
+    if (!r) return null;
+    const s = apply(s0, r.moves);
+    return { moves: r.moves.map(j => MV[j].t), slots: solvedSlots(s).map(k => SLOTS[k].name) };
+  }
+  function startReport(tokens, need, budget) {
+    const best = solveStart(tokens, { need, budget });
+    const per = [];
+    if (need === 1) for (const sl of SLOTS) per.push({ slots: [sl.name], r: solveStart(tokens, { slots: [sl.name], budget }) });
+    if (need === 2) for (let a = 0; a < 4; a++) for (let b = a + 1; b < 4; b++) per.push({ slots: [SLOTS[a].name, SLOTS[b].name], r: solveStart(tokens, { slots: [SLOTS[a].name, SLOTS[b].name], budget: budget / 3 }) });
+    return { best, per };
+  }
+
+  /* last slot: shortest plain insert and shortest insert that also orients all top edges */
+  function solveEC(tokens, budget) {
+    const ids = tokens.map(t => MV.findIndex(m => m.t === t));
+    if (ids.some(i => i < 0)) throw new Error('bad move');
+    const s0 = stateFrom(ids);
+    const keep = solvedSlots(s0);
+    if (!isCross(s0) || keep.length !== 3) throw new Error('not a last-slot case');
+    const slot = SLOTS[[0, 1, 2, 3].find(k => !keep.includes(k))].name;
+    const gens = [slot[1], 'U', slot[0]];
+    const allowed = []; MV.forEach((m, j) => { if (gens.includes(m.f)) allowed.push(j); });
+    const plain = stage(s0, keep, 1, 14, budget, false, allowed);
+    const ec = stage(s0, keep, 1, (plain ? plain.moves.length : 10) + 7, budget, true, allowed);
+    const mt = r => r ? r.moves.map(j => MV[j].t) : null;
+    return { slot, plain: mt(plain), ec: mt(ec) };
+  }
+
+  const api = { solveF2L, MV, pairCases, solveStart, startReport, solveEC };
   if (typeof module !== 'undefined') module.exports = api;
   root.CFOPSolver = api;
   if (typeof WorkerGlobalScope !== 'undefined' && root instanceof WorkerGlobalScope) {
     root.onmessage = e => {
-      try { postMessage({ id: e.data.id, plans: solveF2L(e.data.moves, e.data.opt || {}) }); }
+      try { if (e.data.cmd === 'ec') postMessage({ id: e.data.id, ec: solveEC(e.data.moves, e.data.budget || 2e7) }); else if (e.data.cmd === 'start') postMessage({ id: e.data.id, report: startReport(e.data.moves, e.data.need, e.data.budget || 2e7) }); else postMessage({ id: e.data.id, plans: solveF2L(e.data.moves, e.data.opt || {}) }); }
       catch (err) { postMessage({ id: e.data.id, error: String(err.message || err) }); }
     };
   }
