@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+Lao:wght@400;500;700&display=swap">
-<link rel="stylesheet" href="css/style.css?v=202611140300">
+<link rel="stylesheet" href="css/style.css?v=202611141000">
 </head>
 <body>
 
@@ -164,6 +164,7 @@
     <div class="note"><h3>Back slots without rotations</h3><p>Insert back pairs with <code>R' U R</code>, <code>L U' L'</code> or <code>B</code> moves instead of <code>y</code> rotations. Every case below has an algorithm for each slot.</p></div>
     <div class="note"><h3>Edge control on the last pair</h3><p>Insert the last pair so all four yellow edges end up oriented (ZBLS / VHLS). Then the last layer is one ZBLL or a COLL plus edge PLL.</p></div>
   </div>
+  <div class="cta af-cta"><a class="btn-y" href="#xtrainer">Train these techniques step by step →</a></div>
   <div class="group-title">All 41 F2L cases · every slot</div>
   <div class="zb-tabs" id="afTabs" role="tablist"></div>
   <div id="afCards"></div>
@@ -172,6 +173,7 @@
 <section class="chap" id="xtrainer"><div class="wrap">
   <div class="chap-head"><span class="tag" style="background:var(--s-f2l)">Trainer</span><h2>X-cross &amp; XX-cross trainer</h2></div>
   <div class="prose"><p>Train the hardest part of inspection. Pick a mode, scramble your cube, plan the solution in 15 seconds, type what you planned, then compare it with the optimal one.</p></div>
+  <div class="xt-path" id="xtPath"></div>
   <div class="zb-tabs" id="xtTabs" role="tablist"></div>
   <div class="xt-guide">
     <div class="note" data-g="cross">
@@ -215,6 +217,46 @@
         <li>Methods to learn later: VHLS (pair already joined, corner and edge ready to insert) and ZBLS (any last-slot case).</li>
       </ol>
       <p class="muted">The hint shows how many top edges are flipped right now. Compare the plain insert with the edge-control insert to learn the patterns.</p>
+    </div>
+    <div class="note" data-g="back" hidden>
+      <h3>How to insert back pairs without rotations</h3>
+      <ol>
+        <li>Every back pair can be solved with the slot's own moves: R, U and B for BR; L, U and B for BL.</li>
+        <li>The basic inserts mirror the front ones: R' U R and R' U' R for BR, L U L' and L U' L' for BL.</li>
+        <li>Pair the pieces with U turns while the slot side is turned up, just like front F2L.</li>
+        <li>If a case feels awkward, look it up in Advanced F2L: every case has a BR and a BL algorithm.</li>
+      </ol>
+      <p class="muted">Answers with x, y or z are rejected here. A y rotation costs about as much time as 2–3 moves.</p>
+    </div>
+    <div class="note" data-g="keyhole" hidden>
+      <h3>How keyhole works</h3>
+      <ol>
+        <li>Two slots are empty. Solve the slot you are asked for; the other one is your free "keyhole".</li>
+        <li>Turning the side of an empty slot does not break any solved pair, so you can use it to lift or drop a piece.</li>
+        <li>Classic case: the edge is already in its slot but the corner is in the top layer. Turn the empty slot down, put the corner above it, and turn it back.</li>
+        <li>Keep the empty slot empty: you only have to solve the named one. Breaking a solved pair counts as wrong.</li>
+      </ol>
+      <p class="muted">Keyhole is the bridge from beginner F2L to advanced F2L, and the base of many X-cross tricks.</p>
+    </div>
+    <div class="note" data-g="pseudo" hidden>
+      <h3>How pseudo-slotting works</h3>
+      <ol>
+        <li>Your cross does not have to line up with the centers while you solve F2L. If the D layer is turned, every slot is shifted.</li>
+        <li>So you can solve a pair into the slot that matches the turned D layer, then fix the D layer with one D move later.</li>
+        <li>In inspection, compare a normal X-cross with a cross that is one D turn off but already has a pair next to it.</li>
+        <li>Every case here was picked so the pseudo version is shorter or equal. Try to find it before using hints.</li>
+      </ol>
+      <p class="muted">Pseudo-slotting is mostly used for the first pair (pseudo X-cross). Later pairs get harder to track.</p>
+    </div>
+    <div class="note" data-g="multi" hidden>
+      <h3>How multi-slotting works</h3>
+      <ol>
+        <li>Two pairs are left. Before inserting the first one, look where the pieces of the second pair are.</li>
+        <li>Choose the insert for pair one that also joins or frees pair two (for example R U R' versus R U' R').</li>
+        <li>Sometimes you can insert a corner in one slot while pairing the other. This saves the most moves.</li>
+        <li>Compare your answer with the "both together" and the "one by one" solutions.</li>
+      </ol>
+      <p class="muted">Start by just tracking pair two while you insert pair one. Doing both at once comes later.</p>
     </div>
   </div>
   <div class="xt">
@@ -471,12 +513,12 @@ addEventListener('DOMContentLoaded',function(){try{
   }).catch(function(){});
 }catch(e){}});
 </script>
-<script src="js/zbll-data.js?v=202611140300"></script>
-<script src="js/f2l-data.js?v=202611140300"></script>
-<script src="js/solver.js?v=202611140300"></script>
-<script src="js/cube3d.js?v=202611140300"></script>
-<script src="js/hands3d.js?v=202611140300"></script>
-<script src="js/i18n.js?v=202611140300"></script>
-<script src="js/app.js?v=202611140300"></script>
+<script src="js/zbll-data.js?v=202611141000"></script>
+<script src="js/f2l-data.js?v=202611141000"></script>
+<script src="js/solver.js?v=202611141000"></script>
+<script src="js/cube3d.js?v=202611141000"></script>
+<script src="js/hands3d.js?v=202611141000"></script>
+<script src="js/i18n.js?v=202611141000"></script>
+<script src="js/app.js?v=202611141000"></script>
 </body>
 </html>

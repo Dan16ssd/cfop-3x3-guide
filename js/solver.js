@@ -117,7 +117,7 @@
 
   // goal: cross + all slots in `keep` + `need` more slots
   const edgesOriented = st => EDGES[st[12]][1][1] === 1 && EDGES[st[13]][1][1] === 1 && EDGES[st[14]][1][1] === 1 && EDGES[st[15]][1][1] === 1;
-  function stage(s, keep, need, maxDepth, budget, ec, allowed) {
+  function stage(s, keep, need, maxDepth, budget, ec, allowed, pseudo) {
     const free = [0, 1, 2, 3].filter(k => !keep.includes(k));
     const h = st => {
       let m = crossH(st);
@@ -126,6 +126,13 @@
       return m;
     };
     const goal = st => isCross(st) && keep.every(k => pairOK(st, k)) && free.filter(k => pairOK(st, k)).length >= need && (!ec || edgesOriented(st));
+    if (pseudo) {
+      const D1 = MV.findIndex(m => m.t === 'D');
+      const rotD = st => { const t = st.slice(); for (let i = 0; i < N; i++) t[i] = (i >= 4 && i < 8 ? C : E).T[t[i] * 18 + D1]; return t; };
+      const h2 = st => { let m = h(st), t = st; for (let q = 0; q < 3; q++) { t = rotD(t); m = Math.min(m, h(t)); } return m; };
+      const g2 = st => { let t = st; for (let q = 0; q < 4; q++) { if (goal(t)) return true; t = rotD(t); } return false; };
+      return search(s, g2, h2, maxDepth, budget, allowed);
+    }
     return search(s, goal, h, maxDepth, budget, allowed);
   }
   const apply = (s, moves) => { const t = s.slice(); for (const j of moves) for (let i = 0; i < N; i++) t[i] = (i >= 4 && i < 8 ? C : E).T[t[i] * 18 + j]; return t; };
@@ -259,12 +266,44 @@
     return { slot, plain: mt(plain), ec: mt(ec) };
   }
 
-  const api = { solveF2L, MV, pairCases, solveStart, startReport, solveEC };
+  /* trainer cases. kind: pseudo | keyhole | multi | back */
+  function trainCase(tokens, kind, opt = {}) {
+    const ids = tokens.map(t => MV.findIndex(m => m.t === t));
+    if (ids.some(i => i < 0)) throw new Error('bad move');
+    const s0 = stateFrom(ids), budget = opt.budget || 2e7;
+    const mt = r => r ? r.moves.map(j => MV[j].t) : null;
+    const gensOf = names => { const a = []; MV.forEach((m, j) => { if (names.includes(m.f)) a.push(j); }); return a; };
+    const solvedNow = solvedSlots(s0);
+    if (kind === 'pseudo') {
+      const normal = stage(s0, [], 1, 12, budget);
+      const ps = stage(s0, [], 1, normal ? normal.moves.length : 12, budget, false, null, true);
+      let d = 0; if (ps) { let t = apply(s0, ps.moves); const D1 = MV.findIndex(m => m.t === 'D'); while (d < 4 && !(isCross(t) && solvedSlots(t).length)) { t = apply(t, [D1]); d++; } }
+      return { normal: mt(normal), pseudo: mt(ps), d: ['', 'D', 'D2', "D'"][d % 4] };
+    }
+    if (kind === 'keyhole') {
+      const tk = SLOTS.findIndex(x => x.name === opt.target);
+      return { moves: mt(stage(s0, [...solvedNow, tk], 0, 14, budget, false, gensOf(['R', 'L', 'U', 'F', 'B']))) };
+    }
+    if (kind === 'multi') {
+      const both = stage(s0, solvedNow, 2, 16, budget, false, gensOf(['R', 'L', 'U', 'F', 'B']));
+      const a = stage(s0, solvedNow, 1, 14, budget, false, gensOf(['R', 'L', 'U', 'F', 'B']));
+      let seq = null;
+      if (a) { const s1 = apply(s0, a.moves); const b = stage(s1, solvedSlots(s1), 1, 14, budget, false, gensOf(['R', 'L', 'U', 'F', 'B'])); if (b) seq = [mt(a), mt(b)]; }
+      return { both: mt(both), seq };
+    }
+    if (kind === 'back') {
+      const slot = SLOTS[[0, 1, 2, 3].find(k => !solvedNow.includes(k))].name;
+      return { slot, moves: mt(stage(s0, solvedNow, 1, 14, budget, false, gensOf([slot[1], 'U', slot[0]]))) };
+    }
+    throw new Error('unknown kind');
+  }
+
+  const api = { solveF2L, MV, pairCases, solveStart, startReport, solveEC, trainCase };
   if (typeof module !== 'undefined') module.exports = api;
   root.CFOPSolver = api;
   if (typeof WorkerGlobalScope !== 'undefined' && root instanceof WorkerGlobalScope) {
     root.onmessage = e => {
-      try { if (e.data.cmd === 'ec') postMessage({ id: e.data.id, ec: solveEC(e.data.moves, e.data.budget || 2e7) }); else if (e.data.cmd === 'start') postMessage({ id: e.data.id, report: startReport(e.data.moves, e.data.need, e.data.budget || 2e7) }); else postMessage({ id: e.data.id, plans: solveF2L(e.data.moves, e.data.opt || {}) }); }
+      try { if (e.data.cmd === 'train') postMessage({ id: e.data.id, train: trainCase(e.data.moves, e.data.kind, e.data.opt || {}) }); else if (e.data.cmd === 'ec') postMessage({ id: e.data.id, ec: solveEC(e.data.moves, e.data.budget || 2e7) }); else if (e.data.cmd === 'start') postMessage({ id: e.data.id, report: startReport(e.data.moves, e.data.need, e.data.budget || 2e7) }); else postMessage({ id: e.data.id, plans: solveF2L(e.data.moves, e.data.opt || {}) }); }
       catch (err) { postMessage({ id: e.data.id, error: String(err.message || err) }); }
     };
   }

@@ -544,7 +544,7 @@ function runF2L(moves){
     else setTimeout(()=>{try{res(CFOPSolver.solveF2L(moves));}catch(e){rej(e);}},30);
   });
 }
-const SOLVER_V='202611131800';
+const SOLVER_V='202611141000';
 const htm=str=>str&&str.trim()?str.trim().split(/\s+/).filter(t=>!/^[xyz]/.test(t)).length:0;
 const KIND_NAME={cross:'Cross',xcross:'X-cross',xxcross:'XX-cross'};
 async function solveScramble(sc){
@@ -683,18 +683,42 @@ function workerCall(msg){
   return new Promise((res,rej)=>{
     try{if(!solverWorker&&window.Worker&&location.protocol!=='file:')solverWorker=new Worker('js/solver.js?v='+SOLVER_V);}catch(e){solverWorker=null;}
     if(solverWorker){const id=Math.random();const h=e=>{if(e.data.id!==id)return;solverWorker.removeEventListener('message',h);e.data.error?rej(new Error(e.data.error)):res(e.data);};solverWorker.addEventListener('message',h);solverWorker.postMessage({...msg,id});}
-    else setTimeout(()=>{try{res(msg.cmd==='ec'?{ec:CFOPSolver.solveEC(msg.moves,msg.budget||2e7)}:{report:CFOPSolver.startReport(msg.moves,msg.need,msg.budget||2e7)});}catch(e){rej(e);}},30);
+    else setTimeout(()=>{try{res(msg.cmd==='train'?{train:CFOPSolver.trainCase(msg.moves,msg.kind,msg.opt||{})}:msg.cmd==='ec'?{ec:CFOPSolver.solveEC(msg.moves,msg.budget||2e7)}:{report:CFOPSolver.startReport(msg.moves,msg.need,msg.budget||2e7)});}catch(e){rej(e);}},30);
   });
 }
-const XT_MODES=[['cross','Cross',0],['xcross','X-cross',1],['xxcross','XX-cross',2],['ec','Edge control',1]];
+const XT_MODES=[['cross','Cross',0],['xcross','X-cross',1],['xxcross','XX-cross',2],['back','Back slots',1],['keyhole','Keyhole',1],['ec','Edge control',1],['pseudo','Pseudo-slotting',1],['multi','Multi-slotting',2]];
+const XT_GEN=['ec','back','keyhole','multi'];
 const XT_TARGETS={
   cross:[['any','White cross']],
   xcross:[['any','Best slot'],['FR','FR'],['FL','FL'],['BR','BR'],['BL','BL']],
   xxcross:[['any','Best pair'],['FR+FL','FR + FL'],['BR+BL','BR + BL'],['FR+BR','FR + BR'],['FL+BL','FL + BL'],['FL+BR','FL + BR (diagonal)'],['FR+BL','FR + BL (diagonal)']],
-  ec:[['FR','FR'],['FL','FL'],['BR','BR'],['BL','BL']]
+  back:[['any','Random back slot'],['BR','BR'],['BL','BL']],
+  keyhole:[['any','Random slot'],['FR','FR'],['FL','FL'],['BR','BR'],['BL','BL']],
+  ec:[['any','Random slot'],['FR','FR'],['FL','FL'],['BR','BR'],['BL','BL']],
+  pseudo:[['any','Best slot']],
+  multi:[['any','Random pair'],['FR+FL','FR + FL'],['BR+BL','BR + BL'],['FR+BR','FR + BR'],['FL+BL','FL + BL']]
 };
+const XT_HOW={cross:'Plan the whole white cross in inspection, then check your answer.',xcross:'Plan the cross plus one F2L pair (X-cross) in inspection.',xxcross:'Plan the cross plus two pairs (XX-cross). Hard: take your time at first.',
+  ec:'Cross and 3 pairs are solved. Insert the last pair so that all 4 yellow edges end up oriented (yellow facing up).',
+  back:'Cross and 3 pairs are solved, the missing pair is in a back slot. Insert it without any cube rotation (no x, y or z).',
+  keyhole:'Two slots are empty. Solve the slot named below; the other empty slot is your keyhole.',
+  pseudo:'Plan an X-cross where the D layer may stay turned. Cases are picked where this is shorter than a normal X-cross.',
+  multi:'Cross and 2 pairs are solved. Solve the last two pairs, ideally together in fewer moves than one by one.'};
+/* recommended order: [group, mode, target, name, why, last N, need k, within d moves of optimal] */
+const XT_PATH=[
+  ['Foundation','cross','any','Cross in inspection','Plan the whole cross in inspection and do it without looking.',10,8,1],
+  ['Foundation','xcross','FR','X-cross into FR','Plan cross + the FR pair. One fixed slot keeps it simple while you learn to track a pair.',10,7,2],
+  ['Foundation','xcross','any','X-cross, best slot','Now check all four slots and pick the shortest X-cross.',10,7,2],
+  ['Advanced F2L techniques','back','any','Back slots without rotations',"Insert back pairs with R', L and B moves. No y rotations.",10,8,1],
+  ['Advanced F2L techniques','keyhole','any','Keyhole','Use an empty slot to place a piece without breaking anything.',10,8,2],
+  ['Advanced F2L techniques','ec','any','Edge control','Insert the last pair and orient all four top edges.',10,8,3],
+  ['Advanced F2L techniques','pseudo','any','Pseudo X-cross','Solve the first pair with the D layer turned, then fix the D layer.',10,6,2],
+  ['Advanced F2L techniques','multi','any','Multi-slotting','Solve the last two pairs together in fewer moves.',10,6,2],
+  ['XX-cross','xxcross','FR+FL','XX-cross, front slots','Cross + both front pairs. Pairs next to each other are the easiest to see.',10,5,3],
+  ['XX-cross','xxcross','any','XX-cross, best pair','The final level: plan cross + 2 pairs in 15 seconds.',10,5,3]];
 const EC_INS={FR:["R U R'","R U' R'","R U2 R'","F' U F","F' U' F","F' U2 F"],FL:["L' U L","L' U' L","L' U2 L","F U F'","F U' F'","F U2 F'"],
   BR:["R' U R","R' U' R","R' U2 R","B U B'","B U' B'","B U2 B'"],BL:["L U L'","L U' L'","L U2 L'","B' U B","B' U' B","B' U2 B'"]};
+const xtR=n=>Math.floor(Math.random()*n),xtPick=a=>a[xtR(a.length)],SLOT4=['FR','FL','BR','BL'];
 /* count solved things relative to centers (works with any notation the user types) */
 function crossOK(s){return okBy(s,st=>st.p[1]===-1&&nz(st.p)===2);}
 function slotsOK(s){const out=[];for(const [n,x,z] of [['FR',1,1],['FL',-1,1],['BR',1,-1],['BL',-1,-1]])if(okBy(s,st=>(eq(st.p,[x,-1,z])||eq(st.p,[x,0,z]))))out.push(n);return out;}
@@ -702,76 +726,140 @@ function initXT(){
   const host=document.getElementById('xtrainer');if(!host)return;
   const $=id=>document.getElementById(id);
   let mode='xcross',target='any',cur=null,cube=null,timer=0,stats={},hintLv=0;
-  try{stats=JSON.parse(localStorage.getItem('cfop-xt')||'{}');}catch(e){}
+  try{stats=JSON.parse(localStorage.getItem('cfop-xt')||'{}')||{};}catch(e){}
   try{mode=localStorage.getItem('cfop-xt-mode')||'xcross';}catch(e){}
+  if(!XT_TARGETS[mode])mode='xcross';target=XT_TARGETS[mode][0][0];
+  if(!stats.h)stats.h={};if(!stats.done)stats.done={};
   const save=()=>{try{localStorage.setItem('cfop-xt',JSON.stringify(stats));localStorage.setItem('cfop-xt-mode',mode);}catch(e){}};
+  const isGen=m=>XT_GEN.includes(m);
   const tabs=$('xtTabs');
   XT_MODES.forEach(([k,label])=>{const b=document.createElement('button');b.dataset.set=k;b.setAttribute('role','tab');b.textContent=L(label);b.onclick=()=>{mode=k;target=XT_TARGETS[k][0][0];drawTabs();newCase();};tabs.appendChild(b);});
   const drawTabs=()=>{[...tabs.children].forEach(b=>b.setAttribute('aria-selected',b.dataset.set===mode));
     $('xtTarget').innerHTML=XT_TARGETS[mode].map(([v,l])=>`<option value="${v}"${v===target?' selected':''}>${L(l)}</option>`).join('');
-    $('xtHow').textContent=L({cross:'Plan the whole white cross in inspection, then check your answer.',xcross:'Plan the cross plus one F2L pair (X-cross) in inspection.',xxcross:'Plan the cross plus two pairs (XX-cross). Hard: take your time at first.',ec:'Cross and 3 pairs are solved. Insert the last pair so that all 4 yellow edges end up oriented (yellow facing up).'}[mode]);
+    $('xtHow').textContent=L(XT_HOW[mode]);
     document.querySelectorAll('.xt-guide [data-g]').forEach(n=>n.hidden=n.dataset.g!==mode);
-    drawStats();};
-  $('xtTarget').onchange=e=>{target=e.target.value;newCase();};
+    drawStats();drawPath();};
+  $('xtTarget').onchange=e=>{target=e.target.value;drawPath();newCase();};
   const st=()=>stats[mode]||(stats[mode]={n:0,opt:0,ok:0,diff:0});
   const drawStats=()=>{const s=st();$('xtStats').innerHTML=`<span>${L('Cases')} <b>${s.n}</b></span><span>${L('Optimal')} <b>${s.opt}</b></span><span>${L('Solved')} <b>${s.ok}</b></span><span>${L('Avg extra moves')} <b>${s.ok?(s.diff/s.ok).toFixed(1):'–'}</b></span>`;};
-  const toks3d=()=>cur.mode==='ec'?cur.toks:cur.sc.split(' ');
-  const startModel=()=>{const m=solved();if(cur.mode!=='ec')applyAlg(m,'z2');return m;};
-  const scrambledModel=()=>{const m=solved();applyAlg(m,cur.mode==='ec'?cur.toks.join(' '):'z2 '+cur.sc+' z2');return m;};
+  /* training path */
+  function drawPath(){const box=$('xtPath');if(!box)return;
+    const rows=XT_PATH.map(([grp,m,t,name,why,of,k,dd],i)=>{const h=(stats.h[m+'|'+t]||[]).slice(-of);const good=h.filter(x=>x>=0&&x<=dd).length;
+      if(good>=k&&!stats.done[i]){stats.done[i]=1;save();}return {grp,m,t,name,why,of,k,dd,good,n:h.length,done:!!stats.done[i],i};});
+    const now=rows.findIndex(r=>!r.done),doneN=rows.filter(r=>r.done).length;let g='';
+    box.innerHTML=`<div class="xp-top"><div><h3>${L('Your training path')}</h3><p class="muted">${L('Train the steps in order. Get comfortable with one step, then move on to the next. Progress is saved on this device.')}</p></div><div class="xp-count"><b>${doneN}/${rows.length}</b><span>${L('steps done')}</span></div></div>
+    <ol class="xp">${rows.map(r=>{const head=r.grp!==g?(g=r.grp,`<li class="xp-grp">${L(r.grp)}</li>`):'';const act=mode===r.m&&target===r.t;
+      return head+`<li class="xp-step${r.done?' done':r.i===now?' now':''}${act?' act':''}"><span class="xp-n">${r.done?'✓':r.i+1}</span><div class="xp-b"><b>${L(r.name)}</b>${r.i===now?`<em>${L('You are here')}</em>`:''}<p>${L(r.why)}</p><small>${Lt('pathGoal',r.k,r.of,r.dd)}</small><div class="xp-bar"><i style="width:${Math.min(100,r.good/r.k*100)}%"></i></div><small class="muted">${Lt('pathProg',r.good,r.k,r.n)}</small></div><div class="xp-btns"><button class="${r.i===now?'primary':''}" data-train="${r.i}">${L(act?'Training':'Train')}</button>${r.done?'':`<button class="sm" data-skip="${r.i}">${L('I can do this')}</button>`}</div></li>`;}).join('')}</ol>`;
+    box.querySelectorAll('[data-train]').forEach(b=>b.onclick=()=>{const p=XT_PATH[+b.dataset.train];mode=p[1];target=p[2];drawTabs();newCase();host.querySelector('.xt').scrollIntoView({behavior:'smooth',block:'start'});});
+    box.querySelectorAll('[data-skip]').forEach(b=>b.onclick=()=>{stats.done[+b.dataset.skip]=1;save();drawPath();});
+  }
+  const rec=d=>{const k=cur.mode+'|'+cur.target;const a=stats.h[k]||(stats.h[k]=[]);a.push(d);if(a.length>20)a.shift();
+    const before={...stats.done};save();drawPath();
+    const nw=XT_PATH.findIndex((p,i)=>stats.done[i]&&!before[i]);
+    if(nw>=0){const nx=XT_PATH.findIndex((p,i)=>!stats.done[i]);$('xtCheckOut').insertAdjacentHTML('beforeend',`<p class="status good">🎉 ${Lt('pathDone',L(XT_PATH[nw][3]),nx>=0?L(XT_PATH[nx][3]):'')}</p>`);}};
+  const startModel=()=>{const m=solved();if(!isGen(cur.mode))applyAlg(m,'z2');return m;};
+  const scrambledModel=()=>{const m=solved();applyAlg(m,isGen(cur.mode)?cur.toks.join(' '):'z2 '+cur.sc+' z2');return m;};
   const ensureCube=()=>{if(cube||!window.THREE||!window.Cube3D)return cube;try{cube=new Cube3D($('xtCube'),{speed:220,touch:'none'});}catch(e){cube=null;}return cube;};
   const show=(m)=>{if(!ensureCube())return;cube.clear();cube.model=m;cube.sync(m);};
   const play=(m,moves)=>{if(!ensureCube())return;cube.clear();cube.model=m;cube.sync(m);for(const mv of moves){applyMove(m,mv);cube.model=m;cube.enqueue(mv);}};
   function genEC(slot){
-    for(let tries=0;tries<30;tries++){const seq=[];for(let i=0;i<6;i++){const u=AUFS[Math.floor(Math.random()*4)];if(u)seq.push(u);seq.push(EC_INS[slot][Math.floor(Math.random()*6)]);}
+    for(let tries=0;tries<30;tries++){const seq=[];for(let i=0;i<6;i++){const u=AUFS[xtR(4)];if(u)seq.push(u);seq.push(EC_INS[slot][xtR(6)]);}
       const gen=seq.join(' ');const scr=scrambleOf(gen);const m=solved();applyAlg(m,scr);
       if(!slotsOK(m).includes(slot)&&!edgesOriented(m))return scr.split(' ');}
+    return null;}
+  /* cross + all slots except `slots` solved */
+  function genSlots(slots){
+    for(let tries=0;tries<60;tries++){const seq=[];for(let i=0;i<7;i++){const u=AUFS[xtR(4)];if(u)seq.push(u);seq.push(EC_INS[xtPick(slots)][xtR(6)]);}
+      const scr=scrambleOf(seq.join(' '));const m=solved();applyAlg(m,scr);const ok=slotsOK(m);
+      if(crossOK(m)&&slots.every(x=>!ok.includes(x))&&ok.length===4-slots.length)return scr.split(' ');}
     return null;}
   async function newCase(){
     clearInterval(timer);$('xtClock').textContent='15';$('xtClock').className='xt-clock';
     $('xtOut').replaceChildren();$('xtAns').value='';$('xtCheckOut').replaceChildren();$('xtHintOut').replaceChildren();hintLv=0;
-    if(mode==='ec'){const toks=genEC(target);cur={mode,toks,sc:toks.join(' '),target};
-      $('xtScr').textContent=cur.sc;$('xtHold').textContent=L('Hold white on the bottom and green in front, then do this scramble from a solved cube.');}
-    else{const sc=makeScramble();cur={mode,sc,toks:conjZ2(sc),target};$('xtScr').textContent=sc;$('xtHold').textContent=L('Scramble with white on top and green in front (WCA). Then hold white on the bottom to solve.');}
+    const my={mode,target};cur=my;
+    const hold=L('Hold white on the bottom and green in front, then do this scramble from a solved cube.'),wca=L('Scramble with white on top and green in front (WCA). Then hold white on the bottom to solve.');
+    if(mode==='pseudo'){
+      $('xtScr').textContent=L('Finding a case where pseudo-slotting helps…');$('xtHold').textContent='';
+      let best=null;
+      for(let i=0;i<20;i++){const sc=makeScramble(),toks=conjZ2(sc);let r;try{r=await workerCall({cmd:'train',kind:'pseudo',moves:toks});}catch(e){continue;}
+        if(cur!==my)return;const t=r.train;if(!t.pseudo)continue;const gain=(t.normal?t.normal.length:99)-t.pseudo.length;
+        if(!best||gain>best.gain)best={sc,toks,r,gain};if(gain>0&&t.d)break;}
+      if(!best){$('xtScr').textContent=L('Could not find a case. Press New case.');return;}
+      Object.assign(my,{sc:best.sc,toks:best.toks,r:best.r});my.p=Promise.resolve(best.r);
+      $('xtScr').textContent=my.sc;$('xtHold').textContent=wca;}
+    else if(isGen(mode)){let toks,extra='';
+      if(mode==='ec'){my.slot=target==='any'?xtPick(SLOT4):target;toks=genEC(my.slot);}
+      else if(mode==='back'){my.slot=target==='any'?xtPick(['BR','BL']):target;toks=genSlots([my.slot]);extra=Lt('backGoal',my.slot);}
+      else if(mode==='keyhole'){my.slot=target==='any'?xtPick(SLOT4):target;my.helper=xtPick(SLOT4.filter(x=>x!==my.slot&&(x[0]===my.slot[0]||x[1]===my.slot[1])));my.keep=SLOT4.filter(x=>x!==my.slot&&x!==my.helper);toks=genSlots([my.slot,my.helper]);extra=Lt('keyGoal',my.slot,my.helper);}
+      else{my.pair=(target==='any'?xtPick(['FR+FL','BR+BL','FR+BR','FL+BL']):target).split('+');toks=genSlots(my.pair);extra=Lt('multiGoal',my.pair.join(' + '));}
+      if(!toks){$('xtScr').textContent=L('Could not find a case. Press New case.');return;}
+      my.toks=toks;my.sc=toks.join(' ');$('xtScr').textContent=my.sc;$('xtHold').innerHTML=hold+(extra?` <b class="xt-goal">${extra}</b>`:'');
+      my.p=(mode==='ec'?workerCall({cmd:'ec',moves:toks}):workerCall({cmd:'train',kind:mode,moves:toks,opt:{target:my.slot}})).then(r=>{my.r=r;return r;});}
+    else{const sc=makeScramble();Object.assign(my,{sc,toks:conjZ2(sc)});$('xtScr').textContent=sc;$('xtHold').textContent=wca;
+      my.p=workerCall({cmd:'start',moves:my.toks,need:XT_MODES.find(x=>x[0]===mode)[2]}).then(r=>{my.r=r;return r;});}
     show(scrambledModel());
-    const my=cur;my.p=(mode==='ec'?workerCall({cmd:'ec',moves:my.toks}):workerCall({cmd:'start',moves:my.toks,need:XT_MODES.find(x=>x[0]===mode)[2]})).then(r=>{my.r=r;return r;});
     st().n++;save();drawStats();
   }
   function optimalFor(){const r=cur.r;if(!r)return null;
     if(cur.mode==='ec')return r.ec&&r.ec.ec;
+    if(r.train){const t=r.train;if(cur.mode==='pseudo')return t.pseudo;if(cur.mode==='multi')return t.both||(t.seq?t.seq[0].concat(t.seq[1]):null);return t.moves;}
     if(cur.target==='any')return r.report.best&&r.report.best.moves;
     const p=r.report.per.find(x=>x.slots.slice().sort().join('+')===cur.target.split('+').sort().join('+'));return p&&p.r&&p.r.moves;}
   async function reveal(){
+    if(!cur||!cur.p)return;
     clearInterval(timer);const out=$('xtOut');out.innerHTML=`<p class="muted sol-wait">${L('Finding the optimal solution…')}</p>`;
     let r;try{r=await cur.p;}catch(e){out.innerHTML=`<p class="status err">${e.message}</p>`;return;}
-    const mv=a=>a&&a.length?a.join(' '):'–';
+    const mv=a=>a&&a.length?a.join(' '):'–',len=a=>a?a.length:'–';
+    const sum=a=>`<div class="sol-sum">${a.map(([b,t])=>`<div><b>${b}</b><span>${L(t)}</span></div>`).join('')}</div>`;
+    const row=(lbl,m,small,cls)=>`<li${cls?' class="ll"':''}><span class="lbl">${lbl}</span><code>${mv(m)}</code><small>${small}</small></li>`;
+    const insp=`<li><span class="lbl">${L('Inspection')}</span><code>z2</code><small>${L('white on the bottom')}</small></li>`;
     let html='';
     if(cur.mode==='ec'){const e=r.ec;
       html=`<div class="sol-sum"><div><b>${e.ec?e.ec.length:'–'}</b><span>${L('edge control insert')}</span></div><div><b>${e.plain?e.plain.length:'–'}</b><span>${L('plain insert')}</span></div><div><b>${e.slot}</b><span>${L('slot')}</span></div></div>
       <ol class="sol-steps"><li class="ll"><span class="lbl">${L('Edge control')}</span><code>${mv(e.ec)}</code><small>${L('pair + all edges oriented → ZBLL')}</small></li><li><span class="lbl">${L('Plain insert')}</span><code>${mv(e.plain)}</code><small>${L('pair only')}</small></li></ol>`;}
+    else if(r.train){const t=r.train;
+      if(cur.mode==='pseudo')html=sum([[len(t.normal),'normal X-cross'],[len(t.pseudo),'pseudo X-cross'],[t.d||'–','D adjust later']])+
+        `<ol class="sol-steps">${insp}${row(L('Pseudo X-cross'),t.pseudo,Lt('moves',len(t.pseudo)),1)}${t.d?row(L('Fix the D layer'),[t.d],L('later, often for free during F2L')):''}${row(L('Normal X-cross'),t.normal,Lt('moves',len(t.normal)))}</ol>`;
+      else if(cur.mode==='multi'){const sq=t.seq?t.seq[0].length+t.seq[1].length:null;
+        html=sum([[len(t.both),'both pairs together'],[sq||'–','one by one'],[sq&&t.both?Math.max(0,sq-t.both.length):'–','moves saved']])+
+        `<ol class="sol-steps">${row(L('Both together'),t.both,Lt('moves',len(t.both)),1)}${t.seq?row(L('Pair 1'),t.seq[0],Lt('moves',t.seq[0].length))+row(L('Pair 2'),t.seq[1],Lt('moves',t.seq[1].length)):''}</ol>`;}
+      else html=sum([[len(t.moves),'optimal moves'],[cur.slot,'slot'],cur.mode==='keyhole'?[cur.helper,'empty slot (keyhole)']:['0','no rotations']])+
+        `<ol class="sol-steps">${row(L(cur.mode==='back'?'Back-slot insert':'Keyhole solve'),t.moves,Lt('moves',len(t.moves)),1)}</ol>`;}
     else{const rep=r.report,best=optimalFor();
       html=`<div class="sol-sum"><div><b>${best?best.length:'–'}</b><span>${L('optimal moves')}</span></div><div><b>${rep.best?rep.best.moves.length:'–'}</b><span>${L('best of any slot')}</span></div><div><b>${rep.best&&rep.best.slots.length?rep.best.slots.join('+'):'–'}</b><span>${L('best slot')}</span></div></div>
-      <ol class="sol-steps"><li><span class="lbl">${L('Inspection')}</span><code>z2</code><small>${L('white on the bottom')}</small></li><li class="ll"><span class="lbl">${L({cross:'Cross',xcross:'X-cross',xxcross:'XX-cross'}[cur.mode])}${cur.target!=='any'?' ('+cur.target+')':''}</span><code>${mv(best)}</code><small>${Lt('moves',best?best.length:0)}</small></li></ol>
+      <ol class="sol-steps">${insp}<li class="ll"><span class="lbl">${L({cross:'Cross',xcross:'X-cross',xxcross:'XX-cross'}[cur.mode])}${cur.target!=='any'?' ('+cur.target+')':''}</span><code>${mv(best)}</code><small>${Lt('moves',best?best.length:0)}</small></li></ol>
       ${rep.per.length?`<div class="xt-per">${rep.per.map(p=>`<span class="${p.r&&best&&p.r.moves.length===Math.min(...rep.per.filter(q=>q.r).map(q=>q.r.moves.length))?'on':''}">${p.slots.join(' + ')} <b>${p.r?p.r.moves.length:'>'}</b></span>`).join('')}</div>`:''}`;}
     out.innerHTML=html+`<div class="algline"><button class="primary" id="xtPlay">${L('Play on 3D')}</button></div>`;
-    $('xtPlay').onclick=()=>{const sol=cur.mode==='ec'?r.ec.ec:optimalFor();if(sol)play(scrambledModel(),parse(sol.join(' ')));};
+    $('xtPlay').onclick=()=>{const sol=cur.mode==='ec'?r.ec.ec:cur.mode==='pseudo'&&r.train.pseudo?r.train.pseudo.concat(r.train.d?[r.train.d]:[]):optimalFor();if(sol)play(scrambledModel(),parse(sol.join(' ')));};
   }
   function check(){
+    if(!cur||!cur.p)return;
     const out=$('xtCheckOut');const txt=$('xtAns').value.trim();if(!txt)return;
     let ms;try{ms=parse(txt);}catch(e){out.innerHTML=`<p class="status err">${e.message}</p>`;return;}
     const m=scrambledModel();applyAlg(m,txt);
     const n=htm(txt),cr=crossOK(m),sl=slotsOK(m);
     let ok,msg;
     if(cur.mode==='ec'){ok=sl.length===4&&edgesOriented(m);msg=ok?L('Pair inserted and all edges oriented!'):sl.length<4?L('The last pair is not solved.'):L('Pair solved, but not all yellow edges are oriented.');}
+    else if(cur.mode==='back'){const rot=/(^|\s)[xyz]/.test(txt);ok=!rot&&cr&&sl.length===4;
+      msg=rot?L('No cube rotations allowed here (x, y, z). Use the back-slot moves instead.'):!cr?L('The cross is not solved.'):ok?L('Back pair inserted without rotations!'):L('The last pair is not solved.');}
+    else if(cur.mode==='keyhole'){const broke=cur.keep.filter(k=>!sl.includes(k));ok=cr&&sl.includes(cur.slot)&&!broke.length;
+      msg=!cr?L('The cross is not solved.'):broke.length?Lt('broke',broke.join(' + ')):ok?Lt('xtSolved',cur.slot):Lt('notSlot',cur.slot);}
+    else if(cur.mode==='multi'){ok=cr&&sl.length===4;msg=!cr?L('The cross is not solved.'):ok?L('Both pairs solved!'):L('Not all four pairs are solved.');}
+    else if(cur.mode==='pseudo'){let used=null;for(const d of ['','D','D2',"D'"]){const t=cloneS(m);if(d)applyAlg(t,d);if(crossOK(t)&&slotsOK(t).length){used=d;break;}}
+      ok=used!==null;msg=!ok?L('No pair is solved, even after turning the D layer.'):used?Lt('psOk',used):L('Solved as a normal X-cross (no D adjust needed).');}
     else{const need=XT_MODES.find(x=>x[0]===cur.mode)[2];const want=cur.target==='any'?null:cur.target.split('+');
       ok=cr&&(want?want.every(w=>sl.includes(w)):sl.length>=need);
       msg=!cr?L('The cross is not solved.'):ok?Lt('xtSolved',sl.length?sl.join(' + '):'—'):L('Cross solved, but not the pair(s) you were asked for.');}
     out.innerHTML=`<p class="status ${ok?'good':'err'}">${msg} ${Lt('moves',n)}.</p>`;
     play(scrambledModel(),ms);
-    if(ok){const s=st();s.ok++;cur.p.then(()=>{const best=optimalFor();if(best){const d=Math.max(0,n-best.length);s.diff+=d;if(d===0)s.opt++;out.insertAdjacentHTML('beforeend',`<p class="muted">${d===0?L('That is optimal!'):Lt('xtExtra',d,best.length)}</p>`);}save();drawStats();});}
+    const my=cur;
+    if(ok){const s=st();s.ok++;my.p.then(()=>{if(cur!==my)return;const best=optimalFor();if(best){const d=Math.max(0,n-best.length);s.diff+=d;if(d===0)s.opt++;out.insertAdjacentHTML('beforeend',`<p class="muted">${d===0?L('That is optimal!'):Lt('xtExtra',d,best.length)}</p>`);rec(d);}else rec(0);save();drawStats();});}
+    else rec(-1);
   }
   function flippedTop(){const m=scrambledModel();const ctrU=m.find(x=>eq(x.p,[0,1,0])&&x.n[1]===1).c;let n=0;
     for(const x of m)if(x.p[1]===1&&nz(x.p)===2&&x.c===ctrU&&x.n[1]!==1)n++;return n;}
   async function hint(){
+    if(!cur||!cur.p)return;
     const box=$('xtHintOut');box.innerHTML=`<p class="muted sol-wait">${L('Thinking…')}</p>`;
     let r;try{r=await cur.p;}catch(e){box.innerHTML='';return;}
     hintLv++;const lines=[];
@@ -780,6 +868,14 @@ function initXT(){
       if(hintLv>=2)lines.push(Lt('hEcLen',e.plain?e.plain.length:'–',e.ec?e.ec.length:'–'));
       if(hintLv>=3&&e.ec)lines.push(Lt('hStart',e.ec.slice(0,Math.ceil(e.ec.length/3)).join(' ')));
       if(hintLv>=4&&e.ec)lines.push(Lt('hUses',e.ec.some(t=>/^[FB]/.test(t))?L('an F or B move to fix the edges'):L('only R/L and U moves')));}
+    else if(r.train){const t=r.train,best=optimalFor();
+      if(cur.mode==='back')lines.push(Lt('hBack',cur.slot,cur.slot[1]+', U, '+cur.slot[0]));
+      if(cur.mode==='keyhole')lines.push(Lt('hKey',cur.helper));
+      if(cur.mode==='pseudo')lines.push(Lt('hPseudo',t.normal?t.normal.length:'–',t.pseudo.length,t.d||'–'));
+      if(cur.mode==='multi')lines.push(Lt('hMulti',t.seq?t.seq[0].length+t.seq[1].length:'–',t.both?t.both.length:'–'));
+      if(hintLv>=2&&best)lines.push(Lt('hLen',best.length));
+      if(hintLv>=3&&best)lines.push(Lt('hStart',best.slice(0,2).join(' ')));
+      if(hintLv>=4&&best)lines.push(Lt('hStart',best.slice(0,Math.ceil(best.length/2)).join(' ')));}
     else{const rep=r.report,best=optimalFor();
       if(rep.per.length){const ok=rep.per.filter(p=>p.r);const min=Math.min(...ok.map(p=>p.r.moves.length));
         lines.push(cur.target==='any'?Lt('hEasiest',ok.filter(p=>p.r.moves.length===min).map(p=>p.slots.join(' + ')).join(', '),min):Lt('hTarget',cur.target,best?best.length:'–',min));}
@@ -792,11 +888,11 @@ function initXT(){
   $('xtHint').onclick=hint;
   $('xtNew').onclick=newCase;$('xtReveal').onclick=reveal;$('xtCheck').onclick=check;
   $('xtAns').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();check();}};
-  $('xtWatch').onclick=()=>{if(!cur)return;const m=startModel();const moves=parse(cur.mode==='ec'?cur.sc:cur.sc+' z2');play(m,moves);};
+  $('xtWatch').onclick=()=>{if(!cur||!cur.sc||!cur.p)return;const m=startModel();const moves=parse(isGen(cur.mode)?cur.sc:cur.sc+' z2');play(m,moves);};
   $('xtInspect').onclick=()=>{clearInterval(timer);let t=15;const c=$('xtClock');c.textContent=t;c.className='xt-clock run';
     timer=setInterval(()=>{t--;c.textContent=t>0?t:L('Go!');if(t<=3)c.className='xt-clock warn';if(t<=0){clearInterval(timer);c.className='xt-clock done';}},1000);};
   drawTabs();
-  const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)&&!cur){newCase();}});io.observe(host);
+  const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)&&!cur){newCase();}});io.observe(host.querySelector('.xt'));
 }
 
 /* ---------- boot ---------- */

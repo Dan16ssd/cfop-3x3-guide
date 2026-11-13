@@ -460,3 +460,29 @@ nav.bar .brand img{width:26px;height:26px}
 .xt-guide .note ol{margin:0;padding-left:20px;display:grid;gap:6px}
 .xt-hint{display:grid;gap:4px;font-size:.88rem}
 .xt-hint p:not(.muted){background:rgba(255,210,63,.08);border:1px solid rgba(255,210,63,.25);border-radius:10px;padding:6px 10px}
+
+/* training path */
+.xt-path{margin:14px 0;padding:16px;border-radius:var(--r);background:var(--glass),var(--surface);border:1px solid rgba(255,255,255,.08)}
+.xp-top{display:flex;gap:12px;justify-content:space-between;align-items:flex-start}
+.xp-top p{margin:4px 0 0;font-size:.85rem}
+.xp-count{display:grid;text-align:center;min-width:76px;padding:8px;border-radius:12px;background:rgba(47,210,122,.12)}
+.xp-count b{font-size:1.3rem;color:#7ee2a8}.xp-count span{font-size:.7rem;color:var(--muted)}
+.xp{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px}
+.xp-grp{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.xp-step{display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:start;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.02)}
+.xp-step.now{border-color:rgba(255,210,63,.55);background:rgba(255,210,63,.06)}
+.xp-step.done{opacity:.72}
+.xp-step.act{box-shadow:inset 0 0 0 1px rgba(120,140,255,.65)}
+.xp-n{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:rgba(255,255,255,.08);font-size:.85rem}
+.xp-step.done .xp-n{background:var(--ok);color:#fff}
+.xp-step.now .xp-n{background:var(--yellow);color:#1a1a1a}
+.xp-b{display:grid;gap:3px;min-width:0}
+.xp-b em{font-style:normal;font-size:.66rem;font-weight:700;color:var(--yellow);text-transform:uppercase;letter-spacing:.06em}
+.xp-b p{margin:0;font-size:.84rem}
+.xp-b small{font-size:.75rem}
+.xp-bar{height:6px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:2px}
+.xp-bar i{display:block;height:100%;background:linear-gradient(90deg,#2fd27a,#ffd23f)}
+.xp-btns{display:grid;gap:6px}
+.xt-goal{color:var(--yellow)}
+.af-cta{margin:18px 0 6px}
+@media (max-width:520px){.xp-step{grid-template-columns:30px 1fr}.xp-btns{grid-column:2;display:flex;flex-wrap:wrap}.xp-top{flex-direction:column}}
