@@ -288,8 +288,12 @@ function initTimer(){
     if(state==='idle'||state==='done'){state='holding';clock.className='clock hold';holdT=setTimeout(()=>{if(state==='holding'){state='ready';clock.className='clock ready';clock.textContent='0.00';}},300);}};
   const up=()=>{if(state==='stopped'){state='done';return;}if(state==='holding'){clearTimeout(holdT);state='idle';clock.className='clock';}
     else if(state==='ready'){state='running';clock.className='clock';t0=performance.now();tick();}};
-  document.addEventListener('keydown',e=>{if(['INPUT','SELECT'].includes(e.target.tagName))return;if(state==='running'){e.preventDefault();down();return;}if(e.code==='Space'&&!e.repeat){if(!clock.offsetParent)return;const r=clock.getBoundingClientRect();if(r.bottom<0||r.top>innerHeight)return;e.preventDefault();down();}});
-  document.addEventListener('keyup',e=>{if(e.target.tagName==='INPUT')return;if(e.code==='Space'||state==='stopped'){up();}});
+  /* space never scrolls the page or presses a focused button while the timer page is open */
+  const typing=e=>['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)||e.target.isContentEditable||document.querySelector('dialog[open]');
+  document.addEventListener('keydown',e=>{if(typing(e)||!clock.offsetParent)return;
+    if(state==='running'){e.preventDefault();if(!e.repeat)down();return;}
+    if(e.code==='Space'){e.preventDefault();if(document.activeElement&&document.activeElement!==document.body)document.activeElement.blur();if(!e.repeat)down();}});
+  document.addEventListener('keyup',e=>{if(typing(e)||!clock.offsetParent)return;if(e.code==='Space'||state==='stopped'){e.preventDefault();up();}});
   clock.addEventListener('pointerdown',e=>{e.preventDefault();down();});clock.addEventListener('pointerup',e=>{e.preventDefault();up();});
   document.getElementById('newScr').onclick=newScr;
   document.getElementById('scrToPg').onclick=()=>{pg=solved();applyAlg(pg,'z2 '+scr.textContent+' z2');queue=[];qi=0;drawPg();drawSteps();status(L('Timer scramble loaded (scrambled white-top, shown white-bottom).'));pgNavShow({from:curPage()});go('playground');};
